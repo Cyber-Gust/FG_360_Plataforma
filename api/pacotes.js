@@ -82,7 +82,7 @@ async function sendStatusEmail(pacoteId) {
                     </tr>
 
                     <tr>
-                        <td>
+                        <td style=" text-align: center;">
                             <img src="${siteUrl}${emailData.image}" style="max-width: 100%;" alt="Status da entrega">
                         </td>
                     </tr>
