@@ -55,7 +55,7 @@ async function sendStatusEmail(pacoteId) {
         }
 
         const emailData = statusMap[status];
-        const siteUrl = 'https://www.fg360transportes.com.br';
+        const siteUrl = 'https://portal.fg360transportes.com.br';
         
         // Constrói o corpo do e-mail em HTML
         const htmlBody = `
@@ -97,7 +97,7 @@ async function sendStatusEmail(pacoteId) {
                             <table style="width: 100%; margin-top: 25px; margin-bottom: 25px;">
                                 <tr>
                                     <td align="center">
-                                        <a href="${siteUrl}/rastreio.html?codigo=${codigo_rastreio}" target="_blank" style="display: inline-block; padding: 14px 28px; font-size: 16px; font-weight: bold; color: #ffffff; background-color: #e7a540; text-decoration: none; border-radius: 5px;">
+                                        <a href="${siteUrl}/rastreio/${codigo_rastreio}" target="_blank" style="display: inline-block; padding: 14px 28px; font-size: 16px; font-weight: bold; color: #ffffff; background-color: #e7a540; text-decoration: none; border-radius: 5px;">
                                             Acompanhar Entrega
                                         </a>
                                     </td>
