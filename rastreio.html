@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rastreie sua Encomenda - FG 360</title>
+    
+    <link rel="stylesheet" href="/portal.css">
+    <link rel="stylesheet" href="/rastreio.css">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+
+    <header class="main-header scrolled">
+        </header>
+
+    <section class="tracking-banner">
+        <div class="banner-content">
+            <h1>Acompanhe sua Entrega</h1>
+            <p>Insira o código de rastreio abaixo para ver o status da sua encomenda em tempo real.</p>
+        </div>
+    </section>
+
+    <section class="search-section">
+        <form id="tracking-form" class="tracking-form">
+            <input type="text" id="tracking-code" placeholder="Digite seu código de rastreio" required>
+            <button type="submit">Rastrear</button>
+        </form>
+    </section>
+
+    <main id="results-section" class="results-section">
+        <div id="tracking-results" class="results-container">
+            <p class="initial-message">Digite um código para iniciar o rastreamento.</p>
+        </div>
+    </main>
+    
+    <footer class="main-footer">
+        <div class="footer-main">
+            <div class="footer-container">
+                <div class="footer-col about-col">
+                    <img src="/images/logo.png" alt="Logo FG 360" class="footer-logo">
+                    <p class="footer-about-text">
+                        A FG 360 é especializada em transportes com atuação sob
+                        medida para as necessidades de cada cliente!
+                    </p>
+                    <a href="https://www.instagram.com/seu-usuario" target="_blank" class="social-icon">
+                        <img src="https://img.icons8.com/?size=100&id=32309&format=png&color=FFFFFF" alt="Instagram"> 
+                    </a>
+                </div>
+
+                <div class="footer-col links-col">
+                    <h4 class="footer-title">MAPA DO SITE</h4>
+                    <ul>
+                        <li><a href="/#inicio">Início</a></li>
+                        <li><a href="/#quemsomos">Quem somos</a></li>
+                        <li><a href="/#servicos">Serviços</a></li>
+                        <li><a href="/#contato">Fale conosco</a></li>
+                        <li><a href="/#contato">Cotação</a></li>
+                    </ul>
+                </div>
+
+                <div class="footer-col services-col">
+                    <h4 class="footer-title">SERVIÇOS</h4>
+                    <ul>
+                        <li><a href="/#servicos">Carga direta</a></li>
+                        <li><a href="/#servicos">Carga Fracionada</a></li>
+                        <li><a href="/#servicos">Coleta express</a></li>
+                    </ul>
+                </div>
+
+                <div class="footer-col contact-col">
+                    <h4 class="footer-title">FALE CONOSCO</h4>
+                    <ul class="contact-list">
+                        <li>
+                            <img src="https://img.icons8.com/?size=100&id=9730&format=png&color=e7a540" alt="Ícone Telefone">
+                            <a href="tel:+5512997791211">(12) 99779-1211</a>
+                        </li>
+                        <li>
+                            <img src="https://img.icons8.com/?size=100&id=12623&format=png&color=e7a540" alt="Ícone Email">
+                            <a href="mailto:contato@fg360transportes.com.br">contato@fg360transportes.com.br</a>
+                        </li>
+                        <li>
+                            <img src="https://img.icons8.com/?size=100&id=7880&format=png&color=e7a540" alt="Ícone Endereço">
+                            <span>Rua Eddelzita Ribeiro Gobbi, 354 <br>Residencial Esperança - Caçapava, SP.</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <div class="footer-bottom-container">
+                <p class="copyright-text">&copy; 2025 | TODOS OS DIREITOS RESERVADOS</p>
+                <p class="credits-text">
+                    FEITO POR
+                    <a href="https://bitbloomai.com" target="_blank"> 
+                        <img src="/images/Logo_BB.png" alt="Logo BitBloom AI" class="credits-logo"> BitBloom AI
+                    </a>
+                </p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="/rastreio.js"></script>
+    
+</body>
+</html>

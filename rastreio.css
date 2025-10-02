@@ -1,0 +1,567 @@
+/* =================================
+   ESTILOS DA PÁGINA DE RASTREIO
+   ================================= */
+
+   /* NOVO: Importa a fonte Inter do Google Fonts */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+/* =================================
+   ESTILOS DA PÁGINA DE RASTREIO
+   ================================= */
+
+/* NOVO: Aplica a fonte Inter como padrão para toda a página */
+body {
+    font-family: 'Inter', sans-serif;
+}
+/* Banner Superior */
+.tracking-banner {
+    background-color: #111;
+    background-image: linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.6)), url('images/bg_rastreio.jpg'); /* Reutilize uma imagem de fundo escura */
+    background-size: cover;
+    background-position: center;
+    color: #fff;
+    padding: 80px 20px;
+    text-align: center;
+}
+.banner-content h1 {
+    font-size: 3rem;
+    font-weight: 700;
+    margin-bottom: 10px;
+}
+.banner-content p {
+    font-size: 1.1rem;
+    max-width: 600px;
+    margin: 0 auto;
+    opacity: 0.9;
+}
+
+/* Seção do Formulário de Busca */
+.search-section {
+    background-color: #f4f4f4;
+    padding: 40px 20px;
+    display: flex;
+    justify-content: center;
+}
+.tracking-form {
+    display: flex;
+    width: 100%;
+    max-width: 600px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+    border-radius: 50px;
+}
+.tracking-form input {
+    flex-grow: 1;
+    border: none;
+    padding: 20px 30px;
+    font-size: 1rem;
+    border-radius: 50px 0 0 50px;
+    outline-color: #FFC107;
+}
+.tracking-form button {
+    border: none;
+    background-color: #FFC107;
+    color: #333;
+    padding: 0 40px;
+    font-size: 1rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    cursor: pointer;
+    border-radius: 0 50px 50px 0;
+    transition: background-color 0.3s ease;
+}
+.tracking-form button:hover {
+    background-color: #e0a800;
+}
+
+/* Seção de Resultados */
+.results-section {
+    background-color: #fff;
+    padding: 60px 20px;
+    min-height: 400px;
+}
+.results-container {
+    max-width: 800px;
+    margin: 0 auto;
+}
+.initial-message, .loading-message, .error-message {
+    text-align: center;
+    font-size: 1.2rem;
+    color: #666;
+}
+.error-message { color: #dc3545; }
+
+/* Detalhes do Pedido */
+.package-details {
+    background-color: #f8f9fa;
+    border-radius: 10px;
+    padding: 25px;
+    margin-bottom: 40px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+}
+.detail-item {
+    font-size: 0.95rem;
+}
+.detail-item strong {
+    display: block;
+    color: #333;
+    margin-bottom: 5px;
+}
+.detail-item span {
+    color: #555;
+}
+
+/* --- Linha do Tempo Vertical (VERSÃO MODERNA) --- */
+.timeline {
+    position: relative;
+    margin-left: 30px; /* Ajusta o recuo geral da timeline */
+    border-left: 2px solid #f0f0f0; /* Linha principal mais clara */
+}
+
+.timeline-item {
+    position: relative;
+    margin-bottom: 25px; /* Espaçamento entre os cards */
+    padding-left: 45px; /* Espaço para o ícone */
+}
+
+.timeline-item:last-child {
+    margin-bottom: 0;
+}
+
+.timeline-icon {
+    position: absolute;
+    left: -19px; /* (36px de largura / 2) + 1px */
+    top: 0;
+    width: 46px;
+    height: 46px;
+    background-color: #fff;
+    border: 2px solid #f0f0f0;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.3s ease, border-color 0.3s ease;
+    z-index: 1;
+}
+
+.timeline-icon img {
+    width: 40px;
+    height: 40px;
+    transition: opacity 0.3s ease;
+}
+
+.timeline-content {
+    background-color: #fff;
+    border-radius: 8px;
+    padding: 15px 20px;
+    border: 1px solid #f0f0f0;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.timeline-item:hover .timeline-content {
+    transform: translateX(5px);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
+}
+
+.timeline-status {
+    font-size: 1.05rem;
+    font-weight: 600;
+    color: #666;
+    margin: 0 0 4px 0;
+}
+
+.timeline-date {
+    font-size: 0.8rem;
+    color: #999;
+}
+
+/* --- Estilo para status completados (VERSÃO MODERNA) --- */
+.timeline-item.completed .timeline-icon {
+    background-color: #FFC107;
+    border-color: #FFC107;
+}
+
+.timeline-item.completed .timeline-icon img {
+    opacity: 1;
+}
+
+.timeline-item.completed .timeline-status {
+    color: #000;
+}
+
+/* Barra de progresso que sobe pela linha principal */
+.timeline-item.completed::before {
+    content: '';
+    position: absolute;
+    left: -2px; /* Sobrepõe a linha cinza */
+    top: 0;
+    bottom: -30px; /* Estica por toda a altura do item */
+    width: 2px;
+    background-color: #FFC107;
+    z-index: 0;
+}
+
+/* =================================
+   ESTILOS DO FOOTER
+   ================================= */
+
+.main-footer {
+    color: #dcdcdc;
+    /* Cor de texto padrão para o footer */
+
+}
+
+.footer-main {
+    position: relative;
+    padding: 80px 20px;
+    background-image: url('images/bg_footer.jpg');
+    /* << COLOQUE UMA IMAGEM DE FUNDO AQUI */
+    background-size: cover;
+    background-position: center;
+}
+
+/* Overlay "esfumaçado" */
+.footer-main::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(10, 10, 10, 0.85);
+    z-index: 1;
+}
+
+.footer-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    position: relative;
+    z-index: 2;
+    display: flex;
+    flex-wrap: wrap;
+    /* Permite que as colunas quebrem em telas menores */
+    gap: 40px;
+}
+
+.footer-col {
+    flex: 1;
+    min-width: 220px;
+    /* Largura mínima para cada coluna */
+}
+
+/* Coluna "Sobre" */
+.about-col .footer-logo {
+    max-width: 180px;
+    margin-bottom: 20px;
+}
+
+.about-col .footer-about-text {
+    font-size: 0.9rem;
+    line-height: 1.7;
+    margin-bottom: 20px;
+}
+
+.about-col .social-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border: 1px solid #555;
+    border-radius: 50%;
+    transition: background-color 0.3s ease, border-color 0.3s ease;
+}
+
+.about-col .social-icon:hover {
+    background-color: #e7a540;
+    border-color: #e7a540;
+}
+
+.about-col .social-icon img {
+    width: 20px;
+    height: 20px;
+}
+
+/* Colunas de Links */
+.footer-title {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #ffffff;
+    margin-bottom: 25px;
+    text-transform: uppercase;
+}
+
+.links-col ul,
+.services-col ul {
+    list-style: none;
+    padding: 0;
+}
+
+.links-col ul li,
+.services-col ul li {
+    margin-bottom: 12px;
+}
+
+.links-col ul li a,
+.services-col ul li a {
+    color: #dcdcdc;
+    text-decoration: none;
+    transition: color 0.3s ease, padding-left 0.3s ease;
+}
+
+.links-col ul li a:hover,
+.services-col ul li a:hover {
+    color: #e7a540;
+    padding-left: 5px;
+}
+
+/* Coluna de Contato */
+.contact-list {
+    list-style: none;
+    padding: 0;
+}
+
+.contact-list li {
+    display: flex;
+    align-items: flex-start;
+    gap: 15px;
+    margin-bottom: 20px;
+    font-size: 0.9rem;
+}
+
+.contact-list li img {
+    width: 20px;
+    margin-top: 3px;
+}
+
+.contact-list li a,
+.contact-list li span {
+    color: #dcdcdc;
+    text-decoration: none;
+    line-height: 1.6;
+}
+
+.contact-list li a:hover {
+    color: #e7a540;
+}
+
+/* Barra Inferior do Footer */
+.footer-bottom {
+    background-color: #000000;
+    padding: 20px;
+}
+
+.footer-bottom-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 15px;
+    font-size: 0.85rem;
+    color: #aaa;
+}
+
+.credits-text {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.credits-text a {
+    color: #aaa;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 600;
+    transition: color 0.3s ease;
+}
+
+.credits-text a:hover {
+    color: #fff;
+}
+
+.credits-logo {
+    height: 20px;
+    width: auto;
+}
+
+@media(max-width: 770px) {
+
+    
+/* =================================
+    Estilos do Footer
+    ================================= */
+.footer-container {
+    flex-direction: column;
+    gap: 40px;
+    text-align: center;
+}
+
+.footer-col {
+    min-width: auto;
+    width: 100%;
+}
+
+.about-col .footer-logo {
+    margin: 0 auto 20px;
+}
+
+.about-col .social-icons {
+    justify-content: center;
+}
+
+.footer-bottom-container {
+    flex-direction: column;
+    text-align: center;
+}
+
+}
+
+.proof-of-delivery {
+    margin-top: 2.5rem; /* Espaçamento acima */
+    padding-top: 2rem; /* Espaçamento interno */
+    border-top: 1px solid #e0e0e0; /* Linha de separação */
+    text-align: center; /* Centraliza o conteúdo */
+}
+
+.proof-of-delivery h3 {
+    font-size: 1.5rem;
+    color: #2c3e50; /* Cor escura para o título */
+    margin-bottom: 1.5rem;
+}
+
+.proof-of-delivery a {
+    display: inline-block; /* Permite aplicar sombra e borda */
+    border-radius: 8px;
+    overflow: hidden; /* Garante que a imagem não saia das bordas arredondadas */
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+    transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+}
+
+.proof-of-delivery a:hover {
+    transform: scale(1.03); /* Efeito de zoom ao passar o mouse */
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+}
+
+.proof-of-delivery img {
+    display: block; /* Remove espaço extra abaixo da imagem */
+    max-width: 100%; /* Garante que a imagem seja responsiva */
+    height: auto;
+    /* Opcional: define uma altura máxima para não ficar gigante em telas grandes */
+    max-height: 500px; 
+}
+
+/* =================================
+    MEDIA QUERIES - RESPONSIVIDADE
+   ================================= */
+
+/* Para Tablets (até 992px) */
+@media (max-width: 992px) {
+    .banner-content h1 {
+        font-size: 2.5rem; /* Diminui um pouco o título no banner */
+    }
+}
+
+/* Para Celulares e Tablets em modo retrato (até 768px) */
+@media (max-width: 768px) {
+    
+    /* === Banner === */
+    .tracking-banner {
+        padding: 60px 20px; /* Reduz o espaçamento do banner */
+    }
+    .banner-content h1 {
+        font-size: 2rem; /* Título menor para celulares */
+    }
+    .banner-content p {
+        font-size: 1rem; /* Parágrafo menor */
+    }
+
+    /* === Formulário de Busca === */
+    .tracking-form {
+        flex-direction: column; /* Empilha o campo de busca e o botão */
+        border-radius: 30px; /* Ajusta o raio da borda para o novo layout */
+        box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+    }
+    .tracking-form input {
+        border-radius: 30px 30px 0 0; /* Bordas superiores arredondadas */
+        text-align: center;
+        padding: 18px 20px;
+    }
+    .tracking-form button {
+        border-radius: 0 0 30px 30px; /* Bordas inferiores arredondadas */
+        padding: 18px 20px;
+    }
+    
+    /* === Seção de Resultados === */
+    .results-section {
+        padding: 40px 15px; /* Menos espaçamento lateral */
+    }
+    
+    /* === Detalhes do Pacote === */
+    .package-details {
+        grid-template-columns: 1fr; /* Transforma o grid de 2 colunas em 1 só */
+        gap: 15px;
+        padding: 20px;
+    }
+
+    /* === Linha do Tempo === */
+    .timeline {
+        margin-left: 20px; /* Aproxima a timeline da borda */
+    }
+    .timeline-item {
+        padding-left: 35px; /* Reduz o espaço à esquerda do conteúdo */
+    }
+    .timeline-icon {
+        left: -24px; /* Reposiciona o ícone para se alinhar com a linha */
+        width: 42px;
+        height: 42px;
+    }
+     .timeline-icon img {
+        width: 35px;
+        height: 35px;
+    }
+    
+    /* === Footer === */
+    .footer-container {
+        flex-direction: column; /* Empilha as colunas do rodapé */
+        text-align: center;
+        gap: 35px;
+    }
+    .about-col .footer-logo {
+        margin: 0 auto 20px; /* Centraliza o logo */
+    }
+    .contact-list li {
+        justify-content: center; /* Centraliza os itens de contato */
+    }
+    .footer-bottom-container {
+        flex-direction: column; /* Empilha os textos de copyright e créditos */
+        gap: 10px;
+    }
+
+    /* === Prova de Entrega === */
+    .proof-of-delivery h3 {
+        font-size: 1.3rem;
+    }
+}
+
+
+/* Para Celulares bem pequenos (até 480px) */
+@media (max-width: 480px) {
+    .banner-content h1 {
+        font-size: 1.8rem;
+    }
+    .search-section {
+        padding: 30px 15px;
+    }
+    .timeline-content {
+        padding: 12px 15px; /* Menos espaçamento interno nos cards da timeline */
+    }
+    .timeline-status {
+        font-size: 1rem;
+    }
+}

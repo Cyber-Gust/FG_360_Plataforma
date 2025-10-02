@@ -1,0 +1,128 @@
+    <!-- portal.html -->
+
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Portal de Gestão | FG 360</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <!-- CSS de Configuração (DEVE SER O PRIMEIRO) -->
+    <link rel="stylesheet" href="css/config.css">
+
+    <!-- CSS Principal do Portal (Caminho corrigido) -->
+    <link rel="stylesheet" href="portal.css">
+    
+    <!-- CSS Específicos por Página -->
+    <link rel="stylesheet" href="css/dashboard.css">
+    <link rel="stylesheet" href="css/clientes.css">
+    <link rel="stylesheet" href="css/pacotes.css">
+    <link rel="stylesheet" href="css/frota.css">
+    <link rel="stylesheet" href="css/motoristas.css">
+
+    <!-- Fontes do Google -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/browser-image-compression@2.0.2/dist/browser-image-compression.js"></script>
+</head>
+<body>
+
+    <!-- TELA DE LOGIN -->
+    <div id="auth-container">
+        <div class="login-box">
+            <!-- Caminho da imagem corrigido -->
+            <img src="images/logo.png" alt="Logo FG 360" class="login-logo">
+            <h2>Acesso ao Portal</h2>
+            <form id="login-form">
+                <div class="input-group">
+                    <label for="login-email">Email</label>
+                    <input type="email" id="login-email" required>
+                </div>
+                <div class="input-group">
+                    <label for="login-password">Senha</label>
+                    <input type="password" id="login-password" required>
+                </div>
+                <button type="submit" class="login-button">Entrar</button>
+                <p id="login-error" class="error-message hidden"></p>
+            </form>
+        </div>
+    </div>
+
+    <!-- ESTRUTURA PRINCIPAL DO PORTAL (escondido por padrão) -->
+    <div id="portal-container" class="hidden">
+        <!-- Menu Lateral -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                 <!-- Caminho da imagem corrigido -->
+                <img src="images/logo.png" alt="Logo FG 360" class="sidebar-logo">
+            </div>
+            <nav class="sidebar-nav">
+                <a href="#" class="nav-link active" data-page="dashboard">Dashboard</a>
+                <a href="#" class="nav-link" data-page="clientes">Clientes</a>
+                <a href="#" class="nav-link" data-page="pedidos">Pedidos</a>
+                <a href="#" class="nav-link" data-page="frota">Frota</a>
+                <a href="#" class="nav-link" data-page="motoristas">Motoristas</a>
+            </nav>
+            <div class="sidebar-footer">
+                <div class="user-info">
+                    <span class="user-label">Logado como:</span>
+                    <span id="user-email" class="user-email-text"></span>
+                </div>
+                <button id="logout-button" class="logout-button">Sair</button>
+            </div>
+        </aside>
+
+        <!-- Conteúdo Principal -->
+        <main class="main-content">
+            <header class="main-header-content">
+                <h1 id="page-title">Dashboard</h1>
+            </header>
+            <div class="content-area" id="page-content">
+                <!-- O conteúdo de cada página será injetado aqui pelo JavaScript -->
+            </div>
+        </main>
+    </div>
+
+    <!-- Scripts (Ordem corrigida) -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/config.js"></script>
+    <script src="js/dashboard.js"></script>
+    <script src="js/clientes.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/browser-image-compression@2.0.2/dist/browser-image-compression.js"></script>
+    <script src="js/pacotes.js"></script>
+    <script src="js/frota.js"></script>
+    <script src="js/motoristas.js"></script>
+
+    <!-- Script principal carregado por último (Caminho corrigido) -->
+    <script src="portal.js"></script>
+    <!-- Modal de Upload de Prova de Entrega (inicialmente escondido) -->
+    <div class="modal-overlay" id="upload-proof-modal" style="display: none;">
+        <div class="modal-content">
+            <header class="modal-header">
+                <h2>Anexar Prova de Entrega</h2>
+                <button class="close-button">&times;</button>
+            </header>
+            <form id="upload-proof-form" class="modal-form">
+                <p>Anexando comprovante para o pacote: <strong id="upload-modal-pacote-id"></strong></p>
+                
+                <div class="form-group">
+                    <label for="file-input">Selecione a foto (ou use a câmera)</label>
+                    <input type="file" id="file-input" class="form-control" accept="image/*" capture="environment" required>
+                </div>
+                
+                <img id="image-preview" src="#" alt="Pré-visualização" style="display:none; max-width: 100%; border-radius: 8px; margin-top: 15px;">
+                
+                <div id="upload-status-message" style="margin-top: 15px; font-weight: 500;"></div>
+
+                <footer class="modal-footer">
+                    <button type="button" class="btn btn-secondary close-btn">Cancelar</button>
+                    <button type="submit" class="btn btn-primary" id="submit-upload-btn">Enviar Foto</button>
+                </footer>
+            </form>
+        </div>
+    </div>
+</body>
+</html>
+

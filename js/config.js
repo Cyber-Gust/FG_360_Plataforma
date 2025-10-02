@@ -1,0 +1,3 @@
+// js/config.js
+const supabaseUrl = 'https://plmyiaviwwcyovxslqlb.supabase.co';
+const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBsbXlpYXZpd3djeW92eHNscWxiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTkzNDk5ODMsImV4cCI6MjA3NDkyNTk4M30.vM8B4vTBnihDSP2MnFvLQkPVBqYSHFYmV0T8PHWAOJI';

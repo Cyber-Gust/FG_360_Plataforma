@@ -1,0 +1,33 @@
+/* =================================
+   ARQUIVO DE CONFIGURAÇÃO DE ESTILOS (VARIÁVEIS GLOBAIS)
+   ================================= */
+
+:root {
+    /* Paleta de Cores Principal */
+    --color-primary: #FFC107;      /* Amarelo principal (botões, links, destaques) */
+    --color-primary-dark: #e0a800; /* Amarelo mais escuro para hover */
+    --color-secondary: #343a40;    /* Cinza escuro para elementos secundários */
+
+    /* Cores de Fundo */
+    --color-background: #f4f7fa;   /* Fundo principal das páginas (cinza bem claro) */
+    --color-surface: #ffffff;      /* Fundo de cards, tabelas e modais (branco) */
+    --color-sidebar: #111111;      /* Fundo da barra lateral */
+    
+    /* Cores do Texto */
+    --color-text-primary: #212529; /* Cor principal do texto (quase preto) */
+    --color-text-secondary: #6c757d;/* Cor secundária (textos de apoio, placeholders) */
+    --color-text-on-dark: #ffffff; /* Texto sobre fundos escuros (sidebar) */
+    --color-text-on-primary: #212529;/* Texto sobre botões amarelos */
+
+    /* Cores de Feedback */
+    --color-success: #198754;      /* Verde para sucesso */
+    --color-danger: #dc3545;       /* Vermelho para perigo/excluir */
+    --color-info: #0d6efd;         /* Azul para informação */
+
+    /* Outras Cores */
+    --color-border: #dee2e6;       /* Cor das bordas */
+    --color-overlay: rgba(0, 0, 0, 0.5); /* Overlay de modais */
+
+    /* Tipografia */
+    --font-family-base: 'Poppins', sans-serif;
+}

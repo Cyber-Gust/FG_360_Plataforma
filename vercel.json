@@ -1,0 +1,12 @@
+{
+  "rewrites": [
+    {
+      "source": "/rastreio",
+      "destination": "/rastreio.html"
+    },
+     {
+      "source": "/rastreio/:codigo*",
+      "destination": "/rastreio.html"
+    }
+  ]
+}
