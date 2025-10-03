@@ -1,0 +1,71 @@
+/* css/formularios.css */
+
+/* Container das abas */
+.tabs-container {
+    display: flex;
+    border-bottom: 2px solid var(--color-border);
+    margin-bottom: 25px;
+}
+
+/* Botão de cada aba */
+.tab-link {
+    padding: 12px 20px;
+    cursor: pointer;
+    background-color: transparent;
+    border: none;
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--color-text-secondary);
+    border-bottom: 3px solid transparent;
+    transition: color 0.3s ease, border-color 0.3s ease;
+    margin-bottom: -2px; /* Alinha a borda inferior com a do container */
+}
+
+/* Estilo da aba ativa e ao passar o mouse */
+.tab-link:hover {
+    color: var(--color-primary);
+}
+
+.tab-link.active {
+    color: var(--color-primary);
+    border-bottom-color: var(--color-primary);
+}
+
+/* Estilo para links de anexo na tabela */
+.attachment-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--color-primary);
+    text-decoration: none;
+    font-weight: 500;
+}
+
+.attachment-link:hover {
+    text-decoration: underline;
+}
+
+/* =================================
+   MEDIA QUERIES PARA FORMULÁRIOS
+   ================================= */
+@media (max-width: 768px) {
+    /* --- ABAS --- */
+    .tabs-container {
+        /* Permite que o container das abas role horizontalmente se o conteúdo for maior que a tela */
+        overflow-x: auto;
+        /* Melhora a experiência de rolagem em dispositivos touch */
+        -webkit-overflow-scrolling: touch;
+        /* Esconde a barra de rolagem visualmente, mas mantém a funcionalidade */
+        -ms-overflow-style: none;  /* IE and Edge */
+        scrollbar-width: none;  /* Firefox */
+    }
+    .tabs-container::-webkit-scrollbar {
+        display: none; /* Chrome, Safari, and Opera */
+    }
+
+    .tab-link {
+        padding: 10px 15px; /* Reduz o padding dos botões das abas */
+        font-size: 0.9rem; /* Diminui um pouco a fonte */
+        white-space: nowrap; /* Impede que o texto do botão quebre em duas linhas */
+    }
+}

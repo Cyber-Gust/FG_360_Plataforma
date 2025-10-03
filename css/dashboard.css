@@ -148,3 +148,54 @@
     height: 350px;
 }
 
+/* =================================
+   MEDIA QUERIES PARA O DASHBOARD
+   ================================= */
+@media (max-width: 768px) {
+    /* --- CARDS DE ESTATÍSTICAS --- */
+    .stats-grid {
+        grid-template-columns: 1fr; /* Força uma única coluna de cards */
+        gap: 15px; /* Reduz o espaçamento */
+        margin-bottom: 30px;
+    }
+
+    .stat-card {
+        padding: 15px; /* Menos padding nos cards */
+        gap: 15px;
+    }
+
+    .stat-card-value {
+        font-size: 1.8rem; /* Diminui o tamanho da fonte do valor */
+    }
+
+    /* --- PACOTES RECENTES E SEÇÃO DO GRÁFICO --- */
+    .recent-packages-container,
+    .dashboard-section {
+        padding: 15px; /* Reduz o padding das seções */
+    }
+
+    .recent-packages-title,
+    .dashboard-header h3 {
+        font-size: 1.1rem; /* Diminui o título das seções */
+    }
+
+    /* --- FILTROS DO GRÁFICO --- */
+    .dashboard-header {
+        flex-direction: column; /* Empilha o título e os filtros */
+        align-items: flex-start; /* Alinha tudo à esquerda */
+        gap: 15px;
+    }
+
+    .dashboard-filters {
+        width: 100%;
+    }
+
+    .dashboard-filters input[type="date"] {
+        flex-grow: 1; /* Faz os inputs de data ocuparem o espaço disponível */
+    }
+
+    /* --- GRÁFICO --- */
+    .chart-container {
+        height: 250px; /* Reduz a altura do gráfico para economizar espaço */
+    }
+}

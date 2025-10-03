@@ -20,6 +20,7 @@
     <link rel="stylesheet" href="css/pacotes.css">
     <link rel="stylesheet" href="css/frota.css">
     <link rel="stylesheet" href="css/motoristas.css">
+    <link rel="stylesheet" href="css/formularios.css">
 
     <!-- Fontes do Google -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -52,6 +53,14 @@
 
     <!-- ESTRUTURA PRINCIPAL DO PORTAL (escondido por padrão) -->
     <div id="portal-container" class="hidden">
+        
+        <button id="mobile-menu-toggle" class="mobile-menu-button">
+            <span></span>
+            <span></span>
+            <span></span>
+        </button>
+        
+    <div id="mobile-overlay" class="mobile-overlay"></div>
         <!-- Menu Lateral -->
         <aside class="sidebar">
             <div class="sidebar-header">
@@ -64,6 +73,8 @@
                 <a href="#" class="nav-link" data-page="pedidos">Pedidos</a>
                 <a href="#" class="nav-link" data-page="frota">Frota</a>
                 <a href="#" class="nav-link" data-page="motoristas">Motoristas</a>
+                <a href="#" class="nav-link" data-page="formularios">Formulários</a>
+
             </nav>
             <div class="sidebar-footer">
                 <div class="user-info">
@@ -94,6 +105,7 @@
     <script src="js/pacotes.js"></script>
     <script src="js/frota.js"></script>
     <script src="js/motoristas.js"></script>
+    <script src="js/formularios.js"></script>
 
     <!-- Script principal carregado por último (Caminho corrigido) -->
     <script src="portal.js"></script>

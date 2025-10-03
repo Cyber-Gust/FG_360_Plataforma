@@ -111,10 +111,44 @@ function loadPageContent(page) {
         renderVeiculosPage();
     } else if (page === 'motoristas') {
         renderMotoristasPage();
+    } else if (page === 'formularios') {
+        renderFormulariosPage();
     } else {
         pageContent.innerHTML = `<h2>Página ${title}</h2><p>Conteúdo em construção.</p>`;
     }
 }
+
+function setupMobileMenu() {
+    const menuToggleButton = document.getElementById('mobile-menu-toggle');
+    const sidebar = document.querySelector('.sidebar');
+    const overlay = document.getElementById('mobile-overlay');
+
+    if (menuToggleButton && sidebar && overlay) {
+        // Abre o menu
+        menuToggleButton.addEventListener('click', (e) => {
+            e.stopPropagation(); // Impede que o clique feche o menu imediatamente
+            sidebar.classList.toggle('open');
+            overlay.classList.toggle('active');
+        });
+
+        // Fecha o menu clicando no overlay
+        overlay.addEventListener('click', () => {
+            sidebar.classList.remove('open');
+            overlay.classList.remove('active');
+        });
+
+        // Fecha o menu clicando em um link da sidebar
+        sidebar.querySelectorAll('.nav-link').forEach(link => {
+            link.addEventListener('click', () => {
+                sidebar.classList.remove('open');
+                overlay.classList.remove('active');
+            });
+        });
+    }
+}
+
+// Chama a função para configurar o menu
+setupMobileMenu();
 
 // --- INICIALIZAÇÃO ---
 // Inicia a verificação de sessão assim que o script é carregado

@@ -209,3 +209,60 @@
     display: block;
 }
 
+/* =================================
+   MEDIA QUERIES PARA PACOTES
+   ================================= */
+@media (max-width: 768px) {
+    /* --- TABELAS COM SCROLL HORIZONTAL --- */
+    /* NOVO: Wrapper para a tabela */
+    /* Para a rolagem horizontal funcionar, sua tabela <table class="data-table">
+       deve estar dentro de <div class="table-wrapper"> */
+    .table-wrapper {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch; /* Melhora a experiência de rolagem no iOS */
+        border: 1px solid var(--color-border);
+        border-radius: 8px;
+    }
+    
+    /* Remove bordas e sombras da tabela quando ela está dentro do wrapper,
+       pois o wrapper agora as controla. */
+    .table-wrapper .data-table {
+        border: none;
+        box-shadow: none;
+    }
+
+    /* Garante que a tabela não encolha e force a rolagem */
+    .table-wrapper .data-table {
+        min-width: 700px; /* Ajuste este valor conforme a largura mínima da sua tabela */
+    }
+
+
+    /* --- BADGES DE STATUS --- */
+    .status-badge, .status-badge-btn {
+        padding: 5px 10px; /* Diminui o padding */
+        font-size: 0.7rem; /* Diminui a fonte */
+    }
+    
+
+    /* --- ABAS DE NAVEGAÇÃO --- */
+    .tabs {
+        /* Permite que o container das abas role horizontalmente */
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        /* Esconde a barra de rolagem visualmente */
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+    }
+    .tabs::-webkit-scrollbar {
+        display: none;
+    }
+    .tab-btn {
+        white-space: nowrap; /* Impede que o texto da aba quebre */
+    }
+
+
+    /* --- MODAL DE VISUALIZAÇÃO --- */
+    #view-delivered-modal .modal-content {
+        max-width: 95%; /* Ocupa quase toda a largura da tela */
+    }
+}
