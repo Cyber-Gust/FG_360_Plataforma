@@ -138,3 +138,46 @@ create trigger set_timestamp
 before update on pacotes
 for each row
 execute function set_updated_at();
+
+-- ============================================
+-- 1. MOVIMENTAÇÕES FINANCEIRAS (Nova Tabela)
+-- ============================================
+create table if not exists movimentacoes_financeiras (
+    id uuid primary key default gen_random_uuid(),
+    
+    -- Relacionamentos (Chaves Estrangeiras - podem ser nulas)
+    pacote_id uuid references pacotes(id) on delete set null,
+    cliente_id uuid references clientes(id) on delete set null,
+    motorista_id uuid references motoristas(id) on delete set null,
+    veiculo_id uuid references veiculos(id) on delete set null,
+    
+    -- Dados Financeiros (Todos os valores podem ser nulos, mas use NOT NULL para data)
+    valor_pedido numeric(10, 2),        -- Receita Bruta (Valor que o cliente pagou)
+    custo_motorista numeric(10, 2),     -- Custo com o Motorista (Comissão/Pagamento)
+    custo_veiculo numeric(10, 2),       -- Custo com o Veículo (Combustível, Pedágio, Manutenção)
+
+    -- Campos de Auditoria e Filtro
+    data_lancamento date not null default current_date, -- Data usada para filtros de período
+    observacoes text,
+    criado_em timestamp with time zone default now()
+);
+
+-- Habilitar RLS e Criar Políticas de Acesso
+alter table movimentacoes_financeiras enable row level security;
+
+-- POLÍTICAS: Acesso Total (CRUD) para usuários autenticados
+create policy "Usuários autenticados podem ler movimentacoes"
+on movimentacoes_financeiras for select
+using (auth.role() = 'authenticated');
+
+create policy "Usuários autenticados podem criar movimentacoes"
+on movimentacoes_financeiras for insert
+with check (auth.role() = 'authenticated');
+
+create policy "Usuários autenticados podem atualizar movimentacoes"
+on movimentacoes_financeiras for update
+using (auth.role() = 'authenticated');
+
+create policy "Usuários autenticados podem deletar movimentacoes"
+on movimentacoes_financeiras for delete
+using (auth.role() = 'authenticated');

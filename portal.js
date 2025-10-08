@@ -7,7 +7,7 @@
 // Inicialização do cliente Supabase (usando as chaves do config.js)
 if (!supabaseUrl || !supabaseKey || supabaseUrl === 'https://plmyiaviwwcyovxslqlb.supabase.co') {
 }
-else {alert('Por favor, configure suas chaves do Supabase no arquivo config.js!');}
+else { alert('Por favor, configure suas chaves do Supabase no arquivo config.js!'); }
 
 const supabase = self.supabase.createClient(supabaseUrl, supabaseKey);
 
@@ -111,6 +111,8 @@ function loadPageContent(page) {
         renderVeiculosPage();
     } else if (page === 'motoristas') {
         renderMotoristasPage();
+    } else if (page === 'financeiro') {
+        renderFinanceiroPage();
     } else if (page === 'formularios') {
         renderFormulariosPage();
     } else {
