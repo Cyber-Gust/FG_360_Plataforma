@@ -94,8 +94,6 @@ async function renderFinanceiroPage() {
   // HTML da página do Financeiro
   pageContent.innerHTML = `
     <div id="financeiro-content">
-      <h2 class="section-title">Acompanhamento Financeiro</h2>
-
       <div class="dashboard-section">
         <div class="dashboard-header">
           <h3>Relatório de Período</h3>
