@@ -144,46 +144,6 @@
             </form>
         </div>
     </div>
-    <!-- Modal Financeiro -->
-    <div class="modal-overlay" id="finance-mov-modal" style="display:none;">
-        <div class="modal-content">
-            <header class="modal-header">
-                <h2 id="finance-modal-title">Novo Lançamento Financeiro</h2>
-                <button class="close-button" data-close-modal>&times;</button>
-            </header>
-
-            <form id="finance-mov-form" class="modal-form">
-                <input type="hidden" id="mov-pacote-id">
-                <input type="hidden" id="mov-cliente-id">
-                <input type="hidden" id="mov-motorista-id">
-                <input type="hidden" id="mov-veiculo-id">
-
-                <div class="form-group">
-                    <label>Código de Rastreamento</label>
-                    <div style="display:flex; gap:.5rem;">
-                        <input id="mov-pacote-rastreio" placeholder="EX: BR123..." />
-                        <button type="button" id="search-pacote-btn" class="btn btn-secondary">Buscar</button>
-                    </div>
-                    <small id="pacote-info-display"></small>
-                </div>
-
-                <div class="form-group"><label>Valor Pedido</label><input id="mov-valor-pedido" type="number"
-                        step="0.01"></div>
-                <div class="form-group"><label>Custo Motorista</label><input id="mov-custo-motorista" type="number"
-                        step="0.01"></div>
-                <div class="form-group"><label>Custo Veículo</label><input id="mov-custo-veiculo" type="number"
-                        step="0.01"></div>
-                <div class="form-group"><label>Data Lançamento</label><input id="mov-data-lancamento" type="date"
-                        required></div>
-                <div class="form-group"><label>Observações</label><textarea id="mov-observacoes"></textarea></div>
-
-                <footer class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-close-modal>Cancelar</button>
-                    <button type="submit" class="btn btn-primary" id="submit-mov-btn">Salvar Lançamento</button>
-                </footer>
-            </form>
-        </div>
-    </div>
 </body>
 
 </html>
