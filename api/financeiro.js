@@ -23,6 +23,12 @@ const supabase = createClient(supabaseUrl, supabaseServiceKey, {
  * - PostgREST já ignora NULL em sum(), então não precisa de or/not.is.null.
  * - Retorna custo_total e lucro_liquido prontos.
  */
+
+function toNum(v) {
+  const n = Number(v);
+  return Number.isFinite(n) ? n : 0;
+}
+
 async function fetchAggregatedData(startDate, endDate) {
   const sd = typeof startDate === 'string' ? startDate : null;
   const ed = typeof endDate === 'string' ? endDate : null;

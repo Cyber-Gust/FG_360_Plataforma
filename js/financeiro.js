@@ -246,33 +246,62 @@ async function loadFinancialTransactions() {
 
     tbody.innerHTML = transactions.map(t => {
       const receita = Number(t.valor_pedido || 0);
-      const custoMotorista = Number(t.custo_motorista || 0);
-      const custoVeiculo = Number(t.custo_veiculo || 0);
-      const custoTotal = custoMotorista + custoVeiculo;
-      const lucro = receita - custoTotal;
+      const cm = Number(t.custo_motorista || 0);
+      const cv = Number(t.custo_veiculo || 0);
+      const lucro = receita - (cm + cv);
       const lucroColor = lucro >= 0 ? 'var(--color-success-dark)' : 'var(--color-danger-dark)';
-
       const dt = t.data_lancamento ? new Date(t.data_lancamento) : null;
       const dataFmt = dt && !isNaN(dt) ? dt.toLocaleDateString('pt-BR') : '-';
 
       return `
-        <tr>
+        <tr data-id="${t.id}">
           <td>${dataFmt}</td>
-          <td>${t.pacotes && t.pacotes.codigo_rastreio ? t.pacotes.codigo_rastreio : 'N/A'}</td>
-          <td>${t.clientes && t.clientes.nome_completo ? t.clientes.nome_completo : 'N/A'}</td>
+          <td>${t.pacotes?.codigo_rastreio || 'N/A'}</td>
+          <td>${t.clientes?.nome_completo || 'N/A'}</td>
           <td style="color: var(--color-success-dark);">${formatCurrency(receita, '-')}</td>
-          <td style="color: var(--color-danger-dark);">${formatCurrency(custoMotorista, '-')}</td>
-          <td style="color: var(--color-danger-dark);">${formatCurrency(custoVeiculo, '-')}</td>
-          <td style="font-weight: 600; color: ${lucroColor};">${formatCurrency(lucro)}</td>
-          <td>
-            <button class="btn-icon btn-edit" title="Editar"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg></button>
-            <button class="btn-icon btn-danger btn-delete" title="Excluir"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg></button>
+          <td style="color: var(--color-danger-dark);">${formatCurrency(cm, '-')}</td>
+          <td style="color: var(--color-danger-dark);">${formatCurrency(cv, '-')}</td>
+          <td style="font-weight:600;color:${lucroColor};">${formatCurrency(lucro)}</td>
+          <td class="actions">
+            <button class="btn-icon btn-edit-mov" title="Editar">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
+            </button>
+            <button class="btn-icon btn-danger btn-delete-mov" title="Excluir">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+            </button>
           </td>
         </tr>
       `;
     }).join('');
 
-    // (deixa os handlers de editar/excluir pra próxima fase)
+    // 🔗 Binda DEPOIS de pintar o DOM (e evita duplicar)
+    document.querySelectorAll('.btn-edit-mov').forEach(btn => {
+      if (btn.dataset.bound) return; btn.dataset.bound = '1';
+      btn.addEventListener('click', async (e) => {
+        const id = e.currentTarget.closest('tr').dataset.id;
+        const resp = await fetchAuthenticated(`/api/financeiro?id=${encodeURIComponent(id)}`);
+        if (!resp.ok) return alert('Erro ao carregar lançamento.');
+        const mov = await resp.json();
+        // TODO: abrir modal preenchido (deixo stub)
+        alert(`Stub editar: ${id} (${mov?.clientes?.nome_completo ?? 'sem cliente'})`);
+      });
+    });
+
+    document.querySelectorAll('.btn-delete-mov').forEach(btn => {
+      if (btn.dataset.bound) return; btn.dataset.bound = '1';
+      btn.addEventListener('click', async (e) => {
+        const id = e.currentTarget.closest('tr').dataset.id;
+        if (!confirm('Tem certeza que deseja excluir este lançamento?')) return;
+        const res = await fetchAuthenticated(`/api/financeiro?id=${encodeURIComponent(id)}`, { method: 'DELETE' });
+        if (!res.ok) {
+          const j = await res.json().catch(()=>({}));
+          return alert('Erro ao excluir: ' + (j.error || res.statusText));
+        }
+        await loadFinancialTransactions();
+        await updateFinanceReports();
+      });
+    });
+
   } catch (error) {
     tbody.innerHTML = `<tr><td colspan="8" class="error-message">Erro ao carregar dados: ${error.message}</td></tr>`;
   }
