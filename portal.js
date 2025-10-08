@@ -6,8 +6,8 @@
 
 // Inicialização do cliente Supabase (usando as chaves do config.js)
 if (!supabaseUrl || !supabaseKey || supabaseUrl === 'https://plmyiaviwwcyovxslqlb.supabase.co') {
+  alert('Por favor, configure suas chaves do Supabase no arquivo config.js!');
 }
-else { alert('Por favor, configure suas chaves do Supabase no arquivo config.js!'); }
 
 const supabase = self.supabase.createClient(supabaseUrl, supabaseKey);
 
@@ -23,19 +23,22 @@ const pageTitle = document.getElementById('page-title');
 const pageContent = document.getElementById('page-content');
 
 
-// --- LÓGICA DE AUTENTICAÇÃO ---
+// LÓGICA DE AUTENTICAÇÃO
 async function fetchAuthenticated(url, options = {}) {
   const { data: { session } } = await supabase.auth.getSession();
   if (!session) throw new Error('Sem sessão ativa. Faça login.');
 
   const headers = {
-    'Content-Type': 'application/json',
     'Authorization': `Bearer ${session.access_token}`,
     ...(options.headers || {}),
   };
 
-  const res = await fetch(url, { ...options, headers });
-  return res;
+  // Só define Content-Type se NÃO for FormData
+  if (!(options.body instanceof FormData)) {
+    headers['Content-Type'] = 'application/json';
+  }
+
+  return fetch(url, { ...options, headers });
 }
 window.fetchAuthenticated = fetchAuthenticated;
 
