@@ -564,7 +564,6 @@ async function handleAvulsaSubmit(e) {
     const id = document.getElementById("avulsa-id").value || null;
     const tipo = [...document.querySelectorAll('input[name="avulsa-tipo"]')].find(r => r.checked)?.value || 'receita';
     const payload = {
-      id,
       is_avulsa: true,
       avulsa_tipo: tipo,
       avulsa_descricao: (document.getElementById("avulsa-descricao") || {}).value || null,
@@ -665,8 +664,10 @@ async function handleFinanceFormSubmit(e, { financeMovModal }) {
   }
 
   try {
+
+    const id = (document.getElementById("mov-id") || {}).value || null;
+
     const payload = {
-      id: (document.getElementById("mov-id") || {}).value || null,
 
       pacote_id: (document.getElementById("mov-pacote-id") || {}).value || null,
       cliente_id: (document.getElementById("mov-cliente-id") || {}).value || null,
