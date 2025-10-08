@@ -24,6 +24,20 @@ const pageContent = document.getElementById('page-content');
 
 
 // --- LÓGICA DE AUTENTICAÇÃO ---
+async function fetchAuthenticated(url, options = {}) {
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session) throw new Error('Sem sessão ativa. Faça login.');
+
+  const headers = {
+    'Content-Type': 'application/json',
+    'Authorization': `Bearer ${session.access_token}`,
+    ...(options.headers || {}),
+  };
+
+  const res = await fetch(url, { ...options, headers });
+  return res;
+}
+window.fetchAuthenticated = fetchAuthenticated;
 
 // 1. Tenta fazer login quando o formulário é enviado
 loginForm.addEventListener('submit', async (e) => {

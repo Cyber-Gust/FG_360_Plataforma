@@ -3,10 +3,6 @@
 // Nota: A função 'fetchAuthenticated' deve estar disponível no escopo global
 // (vinda do portal.js ou de um arquivo de utilitário).
 
-const financeMovModal = document.getElementById('finance-mov-modal');
-const financeMovForm = document.getElementById('finance-mov-form');
-const pacoteInfoDisplay = document.getElementById('pacote-info-display');
-
 // ===============================================
 // FUNÇÕES DE UTILIDADE
 // ===============================================
@@ -22,7 +18,7 @@ const formatCurrency = (value, fallback = 'R$ 0,00') => {
 
 async function renderFinanceiroPage() {
     const pageContent = document.getElementById('page-content');
-    
+
     // HTML da página do Financeiro
     pageContent.innerHTML = `
         <div id="financeiro-content">
@@ -69,6 +65,10 @@ async function renderFinanceiroPage() {
         </div>
     `;
 
+    const financeMovModal = document.getElementById('finance-mov-modal');
+    const financeMovForm = document.getElementById('finance-mov-form');
+    const pacoteInfoDisplay = document.getElementById('pacote-info-display');
+
     // 2. Setup e inicialização de todas as funcionalidades
     initializeFinanceReports();
     loadFinancialTransactions();
@@ -94,7 +94,7 @@ function initializeFinanceReports() {
     // Atualiza o relatório na mudança de data
     endInput.addEventListener('change', updateFinanceReports);
     startInput.addEventListener('change', updateFinanceReports);
-    
+
     // Carrega os dados iniciais
     updateFinanceReports();
 }
@@ -103,7 +103,7 @@ async function updateFinanceReports() {
     const startDate = document.getElementById('finance-start-date').value;
     const endDate = document.getElementById('finance-end-date').value;
     const statsGrid = document.getElementById('finance-stats-grid');
-    
+
     if (!startDate || !endDate) return;
 
     statsGrid.innerHTML = '<p class="loading-message">Calculando relatórios...</p>';
@@ -111,17 +111,17 @@ async function updateFinanceReports() {
     try {
         const response = await fetchAuthenticated(`/api/financeiro?relatorio=agregado&startDate=${startDate}&endDate=${endDate}`);
         if (!response.ok) throw new Error('Falha ao carregar dados agregados.');
-        
+
         const data = await response.json();
-        
+
         // Garante que todos os valores (mesmo os 0) sejam tratados como números
         const lucro_liquido = data.lucro_liquido || 0;
         const receita_total = data.receita_total || 0;
         const custo_motorista_total = data.custo_motorista_total || 0;
-        
+
         // Determina a cor do card de lucro (para o estilo CSS)
         const lucroColor = lucro_liquido >= 0 ? 'var(--color-success)' : 'var(--color-danger)';
-        
+
         // Renderiza os cards
         statsGrid.innerHTML = `
             <div class="stat-card" style="border-left: 5px solid var(--color-success);">
@@ -143,7 +143,7 @@ async function updateFinanceReports() {
                 </div>
             </div>
         `;
-        
+
     } catch (error) {
         statsGrid.innerHTML = `<p class="error-message">Erro ao carregar relatórios: ${error.message}</p>`;
     }
@@ -156,13 +156,13 @@ async function updateFinanceReports() {
 async function loadFinancialTransactions() {
     const tbody = document.getElementById('financial-transactions-body');
     tbody.innerHTML = '<tr><td colspan="8">Carregando dados...</td></tr>';
-    
+
     try {
         const response = await fetchAuthenticated('/api/financeiro');
         if (!response.ok) throw new Error('Falha ao carregar lista de lançamentos.');
-        
+
         const transactions = await response.json();
-        
+
         if (transactions.length === 0) {
             tbody.innerHTML = '<tr><td colspan="8" class="no-data-message">Nenhum lançamento encontrado.</td></tr>';
             return;
@@ -175,7 +175,7 @@ async function loadFinancialTransactions() {
             const custoTotal = custoMotorista + custoVeiculo;
             const lucro = receita - custoTotal;
             const lucroColor = lucro >= 0 ? 'var(--color-success-dark)' : 'var(--color-danger-dark)';
-            
+
             return `
                 <tr>
                     <td>${new Date(t.data_lancamento).toLocaleDateString('pt-BR')}</td>
@@ -223,30 +223,30 @@ function setupModalListeners() {
 
     // 2. Busca de Pacote
     document.getElementById('search-pacote-btn').addEventListener('click', searchAndLinkPacote);
-    
+
     // 3. Submissão do Formulário
     financeMovForm.addEventListener('submit', handleFinanceFormSubmit);
 }
 
 async function searchAndLinkPacote() {
     const rastreio = document.getElementById('mov-pacote-rastreio').value.trim();
-    
+
     if (rastreio.length < 5) {
         pacoteInfoDisplay.textContent = 'Digite um código de rastreio válido.';
         return;
     }
-    
+
     pacoteInfoDisplay.textContent = 'Buscando...';
-    
+
     try {
         // ASSUMIMOS que sua rota /api/pacotes aceita um parâmetro 'rastreio_code'
         // ou que a API de pacotes tem uma lógica para buscar por código de rastreio.
-        const response = await fetchAuthenticated(`/api/pacotes?rastreio_code=${rastreio}`); 
-        
+        const response = await fetchAuthenticated(`/api/pacotes?rastreio_code=${rastreio}`);
+
         if (!response.ok) throw new Error('Pacote não encontrado ou erro na busca.');
-        
+
         // A API de Pacotes deve retornar um único objeto se encontrar.
-        const pacote = await response.json(); 
+        const pacote = await response.json();
 
         // Armazena os IDs nos campos ocultos
         document.getElementById('mov-pacote-id').value = pacote.id;
@@ -255,14 +255,14 @@ async function searchAndLinkPacote() {
         document.getElementById('mov-veiculo-id').value = pacote.veiculo_id || '';
 
         const clienteNome = pacote.clientes ? pacote.clientes.nome_completo : 'Cliente Não Vinculado';
-        
+
         pacoteInfoDisplay.innerHTML = `Pacote <strong>${rastreio}</strong> encontrado e vinculado! Cliente: <strong>${clienteNome}</strong>`;
         pacoteInfoDisplay.style.color = 'var(--color-success-dark)';
-        
+
     } catch (error) {
         pacoteInfoDisplay.textContent = `Erro: ${error.message}`;
         pacoteInfoDisplay.style.color = 'var(--color-danger-dark)';
-        
+
         // Limpa campos ocultos em caso de erro
         document.getElementById('mov-pacote-id').value = '';
         document.getElementById('mov-cliente-id').value = '';
@@ -274,27 +274,27 @@ async function searchAndLinkPacote() {
 
 async function handleFinanceFormSubmit(e) {
     e.preventDefault();
-    
+
     const submitBtn = document.getElementById('submit-mov-btn');
     submitBtn.disabled = true;
     submitBtn.textContent = 'Salvando...';
-    
+
     try {
         const payload = {
             pacote_id: document.getElementById('mov-pacote-id').value || null,
             cliente_id: document.getElementById('mov-cliente-id').value || null,
             motorista_id: document.getElementById('mov-motorista-id').value || null,
             veiculo_id: document.getElementById('mov-veiculo-id').value || null,
-            
+
             // Converte valores para números ou null
             valor_pedido: parseFloat(document.getElementById('mov-valor-pedido').value) || null,
             custo_motorista: parseFloat(document.getElementById('mov-custo-motorista').value) || null,
             custo_veiculo: parseFloat(document.getElementById('mov-custo-veiculo').value) || null,
-            
+
             data_lancamento: document.getElementById('mov-data-lancamento').value,
             observacoes: document.getElementById('mov-observacoes').value,
         };
-        
+
         // Validação Mínima de Dados Financeiros
         if (!payload.data_lancamento) {
             throw new Error('A data do lançamento é obrigatória.');
@@ -317,7 +317,7 @@ async function handleFinanceFormSubmit(e) {
 
         alert('Lançamento salvo com sucesso!');
         financeMovModal.style.display = 'none';
-        
+
         // Recarrega os relatórios e a lista após a inserção
         updateFinanceReports();
         loadFinancialTransactions();
