@@ -11,17 +11,18 @@ const formatCurrency = (value, fallback = "R$ 0,00") => {
 
 // injeta modal se não existir no DOM (idempotente)
 function ensureFinanceModal() {
-  if (document.getElementById("finance-mov-modal")) return;
+  // ✅ checa o ID correto do modal do financeiro
+  if (document.getElementById("financeiro-modal-overlay")) return;
 
   const modalHtml = `
-  <div class="modal-overlay" id="finance-mov-modal" style="display:none;">
-    <div class="modal-content">
+  <div class="modal-overlay" id="financeiro-modal-overlay" style="display:none;">
+    <div class="modal-content" id="financeiro-modal-content">
       <header class="modal-header">
-        <h2 id="finance-modal-title">Novo Lançamento Financeiro</h2>
-        <button class="close-button" data-close-modal>&times;</button>
+        <h2 id="financeiro-modal-title">Novo Lançamento Financeiro</h2>
+        <button class="close-button" data-close-financeiro-modal>&times;</button>
       </header>
 
-      <form id="finance-mov-form" class="modal-form">
+      <form id="financeiro-mov-form" class="modal-form">
         <input type="hidden" id="mov-id">
 
         <input type="hidden" id="mov-pacote-id">
@@ -46,22 +47,19 @@ function ensureFinanceModal() {
         <div class="form-group"><label>Custo Operação</label><input id="mov-custo-operacao" type="number" step="0.01"></div>
         <div class="form-group"><label>Custo Descarga</label><input id="mov-custo-descarga" type="number" step="0.01"></div>
         <div class="form-group"><label>Custo Seguro</label><input id="mov-custo-seguro" type="number" step="0.01"></div>
-        <div class="form-group"><label>Imposto</label><input id="mov-imposto" type="number" step="0.01"></div>
-        <div class="form-group"><label>Custo Operação</label><input id="mov-custo-operacao" type="number" step="0.01"></div>
-        <div class="form-group"><label>Custo Descarga</label><input id="mov-custo-descarga" type="number" step="0.01"></div>
-        <div class="form-group"><label>Custo Seguro</label><input id="mov-custo-seguro" type="number" step="0.01"></div>
 
         <div class="form-group"><label>Data Lançamento</label><input id="mov-data-lancamento" type="date" required></div>
         <div class="form-group"><label>Observações</label><textarea id="mov-observacoes"></textarea></div>
 
         <footer class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-close-modal>Cancelar</button>
+          <button type="button" class="btn btn-secondary" data-close-financeiro-modal>Cancelar</button>
           <button type="submit" class="btn btn-primary" id="submit-mov-btn">Salvar Lançamento</button>
         </footer>
       </form>
     </div>
   </div>
   `;
+  // Dica: se quiser blindar ainda mais, troque document.body por #page-content
   document.body.insertAdjacentHTML("beforeend", modalHtml);
 }
 
@@ -118,17 +116,10 @@ async function renderFinanceiroPage() {
   // garante que o modal exista no DOM
   ensureFinanceModal();
 
-  // captura refs AGORA (o DOM já tem tudo)
-  const refs = {
-    financeMovModal: document.getElementById("finance-mov-modal"),
-    financeMovForm: document.getElementById("finance-mov-form"),
-    pacoteInfoDisplay: document.getElementById("pacote-info-display"),
-  };
-
   // inicialização
   initializeFinanceReports();
   loadFinancialTransactions();
-  setupModalListeners(refs);
+  setupModalListeners(); // agora busca os elementos internamente
 }
 
 // ===============================================
@@ -158,8 +149,7 @@ async function updateFinanceReports() {
 
   if (!startDate || !endDate) return;
 
-  statsGrid.innerHTML =
-    '<p class="loading-message">Calculando relatórios...</p>';
+  statsGrid.innerHTML = '<p class="loading-message">Calculando relatórios...</p>';
 
   try {
     const response = await fetchAuthenticated(
@@ -175,36 +165,28 @@ async function updateFinanceReports() {
       data.lucro_liquido != null
         ? data.lucro_liquido
         : receita_total -
-            (Number(data.custo_motorista_total || 0) +
-              Number(data.custo_veiculo_total || 0))
+            (Number(data.custo_motorista_total || 0) + Number(data.custo_veiculo_total || 0))
     );
     const total_entradas = Number(data.total_entradas || 0);
 
-    const lucroColor =
-      lucro_liquido >= 0 ? "var(--color-success)" : "var(--color-danger)";
+    const lucroColor = lucro_liquido >= 0 ? "var(--color-success)" : "var(--color-danger)";
 
     statsGrid.innerHTML = `
       <div class="stat-card" style="border-left: 5px solid var(--color-success);">
         <div class="stat-card-info">
-          <span class="stat-card-value" id="total-receita">${formatCurrency(
-            receita_total
-          )}</span>
+          <span class="stat-card-value" id="total-receita">${formatCurrency(receita_total)}</span>
           <span class="stat-card-label">Receita Bruta Total (${total_entradas} Lanç.)</span>
         </div>
       </div>
       <div class="stat-card" style="border-left: 5px solid var(--color-danger);">
         <div class="stat-card-info">
-          <span class="stat-card-value" id="total-custo">${formatCurrency(
-            custo_total
-          )}</span>
+          <span class="stat-card-value" id="total-custo">${formatCurrency(custo_total)}</span>
           <span class="stat-card-label">Custo Total (Motorista, Veículo e Outros)</span>
         </div>
       </div>
       <div class="stat-card" style="border-left: 5px solid ${lucroColor};">
         <div class="stat-card-info">
-          <span class="stat-card-value" id="total-lucro">${formatCurrency(
-            lucro_liquido
-          )}</span>
+          <span class="stat-card-value" id="total-lucro">${formatCurrency(lucro_liquido)}</span>
           <span class="stat-card-label">Lucro Líquido do Período</span>
         </div>
       </div>
@@ -223,58 +205,40 @@ async function loadFinancialTransactions() {
 
   try {
     const response = await fetchAuthenticated("/api/financeiro");
-    if (!response.ok)
-      throw new Error("Falha ao carregar lista de lançamentos.");
+    if (!response.ok) throw new Error("Falha ao carregar lista de lançamentos.");
 
     const transactions = await response.json();
 
     if (!Array.isArray(transactions) || transactions.length === 0) {
-      tbody.innerHTML =
-        '<tr><td colspan="9" class="no-data-message">Nenhum lançamento encontrado.</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="9" class="no-data-message">Nenhum lançamento encontrado.</td></tr>';
       return;
     }
 
-    tbody.innerHTML = transactions
-      .map((t) => {
-        const receita = Number(t.valor_pedido || 0);
-        const cm = Number(t.custo_motorista || 0);
-        const cv = Number(t.custo_veiculo || 0);
-        const imp = Number(t.imposto || 0);
-        const op = Number(t.custo_operacao || 0);
-        const des = Number(t.custo_descarga || 0);
-        const seg = Number(t.custo_seguro || 0);
-        const outros = imp + op + des + seg;
+    tbody.innerHTML = transactions.map((t) => {
+      const receita = Number(t.valor_pedido || 0);
+      const cm = Number(t.custo_motorista || 0);
+      const cv = Number(t.custo_veiculo || 0);
+      const imp = Number(t.imposto || 0);
+      const op  = Number(t.custo_operacao || 0);
+      const des = Number(t.custo_descarga || 0);
+      const seg = Number(t.custo_seguro || 0);
+      const outros = imp + op + des + seg;
 
-        const lucro = receita - (cm + cv + outros);
-        const lucroColor =
-          lucro >= 0 ? "var(--color-success-dark)" : "var(--color-danger-dark)";
-        const dt = t.data_lancamento ? new Date(t.data_lancamento) : null;
-        const dataFmt = dt && !isNaN(dt) ? dt.toLocaleDateString("pt-BR") : "-";
+      const lucro = receita - (cm + cv + outros);
+      const lucroColor = lucro >= 0 ? "var(--color-success-dark)" : "var(--color-danger-dark)";
+      const dt = t.data_lancamento ? new Date(t.data_lancamento) : null;
+      const dataFmt = dt && !isNaN(dt) ? dt.toLocaleDateString("pt-BR") : "-";
 
-        return `
+      return `
         <tr data-id="${t.id}">
           <td>${dataFmt}</td>
           <td>${t.pacotes?.codigo_rastreio || "N/A"}</td>
           <td>${t.clientes?.nome_completo || "N/A"}</td>
-          <td style="color: var(--color-success-dark);">${formatCurrency(
-            receita,
-            "-"
-          )}</td>
-          <td style="color: var(--color-danger-dark);">${formatCurrency(
-            cm,
-            "-"
-          )}</td>
-          <td style="color: var(--color-danger-dark);">${formatCurrency(
-            cv,
-            "-"
-          )}</td>
-          <td style="color: var(--color-danger-dark);">${formatCurrency(
-            outros,
-            "-"
-          )}</td>
-          <td style="font-weight:600;color:${lucroColor};">${formatCurrency(
-          lucro
-        )}</td>
+          <td style="color: var(--color-success-dark);">${formatCurrency(receita, "-")}</td>
+          <td style="color: var(--color-danger-dark);">${formatCurrency(cm, "-")}</td>
+          <td style="color: var(--color-danger-dark);">${formatCurrency(cv, "-")}</td>
+          <td style="color: var(--color-danger-dark);">${formatCurrency(outros, "-")}</td>
+          <td style="font-weight:600;color:${lucroColor};">${formatCurrency(lucro)}</td>
           <td class="actions">
             <button class="btn-icon btn-edit-mov" title="Editar">
               <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
@@ -285,8 +249,7 @@ async function loadFinancialTransactions() {
           </td>
         </tr>
       `;
-      })
-      .join("");
+    }).join("");
 
     // 🔗 Binda DEPOIS de pintar o DOM (e evita duplicar)
     document.querySelectorAll(".btn-edit-mov").forEach((btn) => {
@@ -294,9 +257,7 @@ async function loadFinancialTransactions() {
       btn.dataset.bound = "1";
       btn.addEventListener("click", async (e) => {
         const id = e.currentTarget.closest("tr").dataset.id;
-        const resp = await fetchAuthenticated(
-          `/api/financeiro?id=${encodeURIComponent(id)}`
-        );
+        const resp = await fetchAuthenticated(`/api/financeiro?id=${encodeURIComponent(id)}`);
         if (!resp.ok) return alert("Erro ao carregar lançamento.");
         const mov = await resp.json();
         openFinanceiroModal(mov);
@@ -309,10 +270,7 @@ async function loadFinancialTransactions() {
       btn.addEventListener("click", async (e) => {
         const id = e.currentTarget.closest("tr").dataset.id;
         if (!confirm("Tem certeza que deseja excluir este lançamento?")) return;
-        const res = await fetchAuthenticated(
-          `/api/financeiro?id=${encodeURIComponent(id)}`,
-          { method: "DELETE" }
-        );
+        const res = await fetchAuthenticated(`/api/financeiro?id=${encodeURIComponent(id)}`, { method: "DELETE" });
         if (!res.ok) {
           const j = await res.json().catch(() => ({}));
           return alert("Erro ao excluir: " + (j.error || res.statusText));
@@ -322,18 +280,18 @@ async function loadFinancialTransactions() {
       });
     });
   } catch (error) {
-    tbody.innerHTML = `<tr><td colspan="9" class="error-message">Erro ao carregar dados: ${error.message}</td></tr>`;
+    document.getElementById("financial-transactions-body").innerHTML =
+      `<tr><td colspan="9" class="error-message">Erro ao carregar dados: ${error.message}</td></tr>`;
   }
 }
 
 // ===============================================
 // 4) MODAL (NOVO/EDITAR LANÇAMENTO)
 // ===============================================
-function setupModalListeners({
-  financeMovModal,
-  financeMovForm,
-  pacoteInfoDisplay,
-}) {
+function setupModalListeners() {
+  const financeMovModal = document.getElementById("financeiro-modal-overlay");
+  const financeMovForm  = document.getElementById("financeiro-mov-form");
+  const pacoteInfoDisplay = document.getElementById("pacote-info-display");
   if (!financeMovModal || !financeMovForm) return;
 
   // 👉 evita listeners duplicados
@@ -344,43 +302,33 @@ function setupModalListeners({
   if (openBtn && !openBtn.dataset.bound) {
     openBtn.dataset.bound = "1";
     openBtn.addEventListener("click", () => {
-      if (pacoteInfoDisplay) {
-        pacoteInfoDisplay.textContent = "";
-        pacoteInfoDisplay.style.color = "";
-      }
+      if (pacoteInfoDisplay) { pacoteInfoDisplay.textContent = ""; pacoteInfoDisplay.style.color = ""; }
       openFinanceiroModal(null); // modo "novo"
     });
   }
 
-  financeMovModal.querySelectorAll("[data-close-modal]").forEach((btn) => {
+  // fecha usando o atributo exclusivo do modal do financeiro
+  financeMovModal.querySelectorAll("[data-close-financeiro-modal]").forEach((btn) => {
     if (!btn.dataset.bound) {
       btn.dataset.bound = "1";
-      btn.addEventListener("click", () => {
-        financeMovModal.style.display = "none";
-      });
+      btn.addEventListener("click", () => { financeMovModal.style.display = "none"; });
     }
   });
 
   const searchBtn = document.getElementById("search-pacote-btn");
   if (searchBtn && !searchBtn.dataset.bound) {
     searchBtn.dataset.bound = "1";
-    searchBtn.addEventListener("click", () =>
-      searchAndLinkPacote({ pacoteInfoDisplay })
-    );
+    searchBtn.addEventListener("click", () => searchAndLinkPacote({ pacoteInfoDisplay }));
   }
 
-  financeMovForm.addEventListener(
-    "submit",
-    (e) => handleFinanceFormSubmit(e, { financeMovModal }),
-    { once: false }
-  );
+  financeMovForm.addEventListener("submit", (e) => handleFinanceFormSubmit(e, { financeMovModal }), { once: false });
 }
 
 // Abre o modal em modo "novo" ou "editar" preenchendo os campos
 function openFinanceiroModal(mov = null) {
-  const modal = document.getElementById("finance-mov-modal");
-  const form = document.getElementById("finance-mov-form");
-  const title = document.getElementById("finance-modal-title");
+  const modal = document.getElementById("financeiro-modal-overlay");
+  const form  = document.getElementById("financeiro-mov-form");
+  const title = document.getElementById("financeiro-modal-title");
   if (!modal || !form) return;
 
   form.reset();
@@ -389,40 +337,27 @@ function openFinanceiroModal(mov = null) {
 
   if (mov) {
     if (title) title.textContent = "Editar Lançamento Financeiro";
-    (document.getElementById("mov-pacote-id") || {}).value =
-      mov.pacote_id || "";
-    (document.getElementById("mov-cliente-id") || {}).value =
-      mov.cliente_id || "";
-    (document.getElementById("mov-motorista-id") || {}).value =
-      mov.motorista_id || "";
-    (document.getElementById("mov-veiculo-id") || {}).value =
-      mov.veiculo_id || "";
+    (document.getElementById("mov-pacote-id") || {}).value = mov.pacote_id || "";
+    (document.getElementById("mov-cliente-id") || {}).value = mov.cliente_id || "";
+    (document.getElementById("mov-motorista-id") || {}).value = mov.motorista_id || "";
+    (document.getElementById("mov-veiculo-id") || {}).value = mov.veiculo_id || "";
 
-    (document.getElementById("mov-valor-pedido") || {}).value =
-      mov.valor_pedido ?? "";
-    (document.getElementById("mov-custo-motorista") || {}).value =
-      mov.custo_motorista ?? "";
-    (document.getElementById("mov-custo-veiculo") || {}).value =
-      mov.custo_veiculo ?? "";
+    (document.getElementById("mov-valor-pedido") || {}).value = mov.valor_pedido ?? "";
+    (document.getElementById("mov-custo-motorista") || {}).value = mov.custo_motorista ?? "";
+    (document.getElementById("mov-custo-veiculo") || {}).value = mov.custo_veiculo ?? "";
 
     (document.getElementById("mov-imposto") || {}).value = mov.imposto ?? "";
-    (document.getElementById("mov-custo-operacao") || {}).value =
-      mov.custo_operacao ?? "";
-    (document.getElementById("mov-custo-descarga") || {}).value =
-      mov.custo_descarga ?? "";
-    (document.getElementById("mov-custo-seguro") || {}).value =
-      mov.custo_seguro ?? "";
+    (document.getElementById("mov-custo-operacao") || {}).value = mov.custo_operacao ?? "";
+    (document.getElementById("mov-custo-descarga") || {}).value = mov.custo_descarga ?? "";
+    (document.getElementById("mov-custo-seguro") || {}).value = mov.custo_seguro ?? "";
 
-    (document.getElementById("mov-data-lancamento") || {}).value =
-      mov.data_lancamento || "";
-    (document.getElementById("mov-observacoes") || {}).value =
-      mov.observacoes || "";
+    (document.getElementById("mov-data-lancamento") || {}).value = mov.data_lancamento || "";
+    (document.getElementById("mov-observacoes") || {}).value = mov.observacoes || "";
 
-    // exibir código de rastreio/cliente informativo no modal
+    // exibir info amigável
     const info = document.getElementById("pacote-info-display");
     if (info) {
-      const clienteNome =
-        mov.clientes?.nome_completo || "Cliente Não Vinculado";
+      const clienteNome = mov.clientes?.nome_completo || "Cliente Não Vinculado";
       const rastreio = mov.pacotes?.codigo_rastreio || "N/A";
       info.innerHTML = `Pacote <strong>${rastreio}</strong> • Cliente: <strong>${clienteNome}</strong>`;
       info.style.color = "";
@@ -449,11 +384,8 @@ async function searchAndLinkPacote({ pacoteInfoDisplay }) {
   pacoteInfoDisplay.style.color = "";
 
   try {
-    const response = await fetchAuthenticated(
-      `/api/pacotes?rastreio_code=${encodeURIComponent(rastreio)}`
-    );
-    if (!response.ok)
-      throw new Error("Pacote não encontrado ou erro na busca.");
+    const response = await fetchAuthenticated(`/api/pacotes?rastreio_code=${encodeURIComponent(rastreio)}`);
+    if (!response.ok) throw new Error("Pacote não encontrado ou erro na busca.");
 
     const result = await response.json();
     const pacote = Array.isArray(result) ? result[0] : result;
@@ -461,27 +393,17 @@ async function searchAndLinkPacote({ pacoteInfoDisplay }) {
 
     // guarda ids
     (document.getElementById("mov-pacote-id") || {}).value = pacote.id || "";
-    (document.getElementById("mov-cliente-id") || {}).value =
-      pacote.cliente_id || "";
-    (document.getElementById("mov-motorista-id") || {}).value =
-      pacote.motorista_id || "";
-    (document.getElementById("mov-veiculo-id") || {}).value =
-      pacote.veiculo_id || "";
+    (document.getElementById("mov-cliente-id") || {}).value = pacote.cliente_id || "";
+    (document.getElementById("mov-motorista-id") || {}).value = pacote.motorista_id || "";
+    (document.getElementById("mov-veiculo-id") || {}).value = pacote.veiculo_id || "";
 
-    const clienteNome = pacote.clientes
-      ? pacote.clientes.nome_completo
-      : "Cliente Não Vinculado";
+    const clienteNome = pacote.clientes ? pacote.clientes.nome_completo : "Cliente Não Vinculado";
     pacoteInfoDisplay.innerHTML = `Pacote <strong>${rastreio}</strong> vinculado! Cliente: <strong>${clienteNome}</strong>`;
     pacoteInfoDisplay.style.color = "var(--color-success-dark)";
   } catch (error) {
     pacoteInfoDisplay.textContent = `Erro: ${error.message}`;
     pacoteInfoDisplay.style.color = "var(--color-danger-dark)";
-    [
-      "mov-pacote-id",
-      "mov-cliente-id",
-      "mov-motorista-id",
-      "mov-veiculo-id",
-    ].forEach((id) => {
+    ["mov-pacote-id", "mov-cliente-id", "mov-motorista-id", "mov-veiculo-id"].forEach((id) => {
       const el = document.getElementById(id);
       if (el) el.value = "";
     });
@@ -490,7 +412,7 @@ async function searchAndLinkPacote({ pacoteInfoDisplay }) {
 
 async function handleFinanceFormSubmit(e, { financeMovModal }) {
   e.preventDefault();
-  if (handleFinanceFormSubmit._busy) return; // 🚫 evita duplo clique + doubles
+  if (handleFinanceFormSubmit._busy) return; // 🚫 evita duplo clique
   handleFinanceFormSubmit._busy = true;
 
   const submitBtn = document.getElementById("submit-mov-btn");
@@ -504,47 +426,24 @@ async function handleFinanceFormSubmit(e, { financeMovModal }) {
       id: (document.getElementById("mov-id") || {}).value || null,
 
       pacote_id: (document.getElementById("mov-pacote-id") || {}).value || null,
-      cliente_id:
-        (document.getElementById("mov-cliente-id") || {}).value || null,
-      motorista_id:
-        (document.getElementById("mov-motorista-id") || {}).value || null,
-      veiculo_id:
-        (document.getElementById("mov-veiculo-id") || {}).value || null,
+      cliente_id: (document.getElementById("mov-cliente-id") || {}).value || null,
+      motorista_id: (document.getElementById("mov-motorista-id") || {}).value || null,
+      veiculo_id: (document.getElementById("mov-veiculo-id") || {}).value || null,
 
-      valor_pedido:
-        parseFloat((document.getElementById("mov-valor-pedido") || {}).value) ||
-        null,
-      custo_motorista:
-        parseFloat(
-          (document.getElementById("mov-custo-motorista") || {}).value
-        ) || null,
-      custo_veiculo:
-        parseFloat(
-          (document.getElementById("mov-custo-veiculo") || {}).value
-        ) || null,
+      valor_pedido: parseFloat((document.getElementById("mov-valor-pedido") || {}).value) || null,
+      custo_motorista: parseFloat((document.getElementById("mov-custo-motorista") || {}).value) || null,
+      custo_veiculo: parseFloat((document.getElementById("mov-custo-veiculo") || {}).value) || null,
 
-      imposto:
-        parseFloat((document.getElementById("mov-imposto") || {}).value) ||
-        null,
-      custo_operacao:
-        parseFloat(
-          (document.getElementById("mov-custo-operacao") || {}).value
-        ) || null,
-      custo_descarga:
-        parseFloat(
-          (document.getElementById("mov-custo-descarga") || {}).value
-        ) || null,
-      custo_seguro:
-        parseFloat((document.getElementById("mov-custo-seguro") || {}).value) ||
-        null,
+      imposto: parseFloat((document.getElementById("mov-imposto") || {}).value) || null,
+      custo_operacao: parseFloat((document.getElementById("mov-custo-operacao") || {}).value) || null,
+      custo_descarga: parseFloat((document.getElementById("mov-custo-descarga") || {}).value) || null,
+      custo_seguro: parseFloat((document.getElementById("mov-custo-seguro") || {}).value) || null,
 
-      data_lancamento: (document.getElementById("mov-data-lancamento") || {})
-        .value,
+      data_lancamento: (document.getElementById("mov-data-lancamento") || {}).value,
       observacoes: (document.getElementById("mov-observacoes") || {}).value,
     };
 
-    if (!payload.data_lancamento)
-      throw new Error("A data do lançamento é obrigatória.");
+    if (!payload.data_lancamento) throw new Error("A data do lançamento é obrigatória.");
     if (
       !payload.valor_pedido &&
       !payload.custo_motorista &&
@@ -560,21 +459,13 @@ async function handleFinanceFormSubmit(e, { financeMovModal }) {
     const isEdit = Boolean(payload.id);
     const method = isEdit ? "PUT" : "POST";
 
-    const response = await fetchAuthenticated("/api/financeiro", {
-      method,
-      body: JSON.stringify(payload),
-    });
-
+    const response = await fetchAuthenticated("/api/financeiro", { method, body: JSON.stringify(payload) });
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
       throw new Error(errorData.error || "Falha ao salvar lançamento.");
     }
 
-    alert(
-      isEdit
-        ? "Lançamento atualizado com sucesso!"
-        : "Lançamento salvo com sucesso!"
-    );
+    alert(isEdit ? "Lançamento atualizado com sucesso!" : "Lançamento salvo com sucesso!");
     if (financeMovModal) financeMovModal.style.display = "none";
     await updateFinanceReports();
     await loadFinancialTransactions();
