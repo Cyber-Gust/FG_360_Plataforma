@@ -148,45 +148,49 @@ export default async function handler(request, response) {
   }
 
   // ------ POST (criar lançamento) ------
-  if (request.method === 'POST') {
-    try {
-      // Next.js já parseia JSON quando Content-Type: application/json
-      const payload = request.body || {};
-      // Higieniza números (evita string numérica estourar RLS/constraints)
-      const data = {
-        ...payload,
-        // relacionais:
-        pacote_id: payload.pacote_id ?? null,
-        cliente_id: payload.cliente_id ?? null,
-        motorista_id: payload.motorista_id ?? null,
-        veiculo_id: payload.veiculo_id ?? null,
+if (request.method === 'POST') {
+  try {
+    const raw = request.body || {};
 
-        // pacote (campos clássicos):
-        valor_pedido: payload.valor_pedido != null ? Number(payload.valor_pedido) : null,
-        custo_motorista: payload.custo_motorista != null ? Number(payload.custo_motorista) : null,
-        custo_veiculo: payload.custo_veiculo != null ? Number(payload.custo_veiculo) : null,
-        imposto: payload.imposto != null ? Number(payload.imposto) : null,
-        custo_operacao: payload.custo_operacao != null ? Number(payload.custo_operacao) : null,
-        custo_descarga: payload.custo_descarga != null ? Number(payload.custo_descarga) : null,
-        custo_seguro: payload.custo_seguro != null ? Number(payload.custo_seguro) : null,
+    // ❌ NUNCA insira 'id' vindo do client no POST
+    const { id: _ignore, ...payload } = raw;
 
-        // avulsa:
-        is_avulsa: Boolean(payload.is_avulsa),
-        avulsa_tipo: payload.avulsa_tipo ?? null, // 'receita' | 'custo'
-        avulsa_valor: payload.avulsa_valor != null ? Number(payload.avulsa_valor) : null,
-        avulsa_descricao: payload.avulsa_descricao ?? null,
+    const data = {
+      ...payload,
 
-        data_lancamento: payload.data_lancamento || null,
-        observacoes: payload.observacoes || null,
-      };
+      // relacionais
+      pacote_id: payload.pacote_id ?? null,
+      cliente_id: payload.cliente_id ?? null,
+      motorista_id: payload.motorista_id ?? null,
+      veiculo_id: payload.veiculo_id ?? null,
 
-      const { error } = await supabase.from('movimentacoes_financeiras').insert([data]);
-      if (error) throw error;
-      return response.status(201).json({ message: 'Lançamento criado com sucesso!' });
-    } catch (error) {
-      return response.status(500).json({ error: 'Erro ao criar lançamento: ' + error.message });
-    }
+      // pacote (numéricos)
+      valor_pedido: payload.valor_pedido != null ? Number(payload.valor_pedido) : null,
+      custo_motorista: payload.custo_motorista != null ? Number(payload.custo_motorista) : null,
+      custo_veiculo: payload.custo_veiculo != null ? Number(payload.custo_veiculo) : null,
+      imposto: payload.imposto != null ? Number(payload.imposto) : null,
+      custo_operacao: payload.custo_operacao != null ? Number(payload.custo_operacao) : null,
+      custo_descarga: payload.custo_descarga != null ? Number(payload.custo_descarga) : null,
+      custo_seguro: payload.custo_seguro != null ? Number(payload.custo_seguro) : null,
+
+      // avulsa
+      is_avulsa: payload.is_avulsa ? true : false,
+      avulsa_tipo: payload.avulsa_tipo ?? null,  // 'receita' | 'custo'
+      avulsa_valor: payload.avulsa_valor != null ? Number(payload.avulsa_valor) : null,
+      avulsa_descricao: payload.avulsa_descricao ?? null,
+
+      data_lancamento: payload.data_lancamento || null,
+      observacoes: payload.observacoes || null,
+    };
+
+    const { error } = await supabase.from('movimentacoes_financeiras').insert([data]);
+    if (error) throw error;
+
+    return response.status(201).json({ message: 'Lançamento criado com sucesso!' });
+  } catch (error) {
+    return response.status(500).json({ error: 'Erro ao criar lançamento: ' + error.message });
   }
+}
 
   // ------ PUT (atualizar lançamento) ------
   if (request.method === 'PUT') {
