@@ -8,7 +8,7 @@ import { createClient } from '@supabase/supabase-js';
  * - NUNCA exponha essa chave no front.
  */
 const supabaseUrl = process.env.VITE_SUPABASE_URL;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_KEY;
 
 if (!supabaseUrl || !supabaseServiceKey) {
   throw new Error('Env do Supabase ausente. Defina SUPABASE_URL e SUPABASE_SERVICE_ROLE_KEY.');

@@ -114,3 +114,25 @@
         flex-grow: 1;
     }
 }
+
+/* tamanho mais compacto e rolável */
+#finance-mov-modal .modal-content {
+  width: 100%;
+  max-width: 560px;       /* ↓ diminui aqui o tamanho */
+  max-height: 80vh;       /* limita altura na viewport */
+  overflow-y: auto;       /* rolagem vertical */
+  overscroll-behavior: contain;
+}
+
+/* header fixo e botão X clicável */
+#finance-mov-modal .modal-header {
+  position: sticky;
+  top: 0;
+  background: #fff;
+  z-index: 1;
+}
+
+/* opcional: overlay fecha no clique fora */
+.modal-overlay {
+  cursor: default;
+}
