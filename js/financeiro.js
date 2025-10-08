@@ -158,7 +158,7 @@ function ensureFinanceModal() {
 
         <footer class="modal-footer">
           <button type="button" class="btn btn-secondary" data-close-financeiro-modal>Cancelar</button>
-          <button type="submit" className="btn btn-primary" id="submit-mov-btn">Salvar</button>
+          <button type="submit" class="btn btn-primary" id="submit-mov-btn">Salvar</button>
         </footer>
       </form>
     </div>
@@ -349,7 +349,7 @@ async function updateFinanceReports() {
 // ===============================================
 async function loadFinancialTransactions() {
   const tbody = document.getElementById("financial-transactions-body");
-  tbody.innerHTML = '<tr><td colspan="9">Carregando dados...</td></tr>';
+  tbody.innerHTML = '<tr><td colspan="8">Carregando dados...</td></tr>';
 
   try {
     const response = await fetchAuthenticated("/api/financeiro");
@@ -358,7 +358,7 @@ async function loadFinancialTransactions() {
     const transactions = await response.json();
 
     if (!Array.isArray(transactions) || transactions.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="9" class="no-data-message">Nenhum lançamento encontrado.</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="8" class="no-data-message">Nenhum lançamento encontrado.</td></tr>';
       return;
     }
 
@@ -437,7 +437,7 @@ async function loadFinancialTransactions() {
     });
   } catch (error) {
     document.getElementById("financial-transactions-body").innerHTML =
-      `<tr><td colspan="9" class="error-message">Erro ao carregar dados: ${error.message}</td></tr>`;
+      `<tr><td colspan="8" class="error-message">Erro ao carregar dados: ${error.message}</td></tr>`;
   }
 }
 
