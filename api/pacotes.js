@@ -156,23 +156,26 @@ export default async function handler(request, response) {
 
     // --- LÓGICA PARA ATUALIZAR PACOTE (PUT) ---
     if (request.method === 'PUT') {
-        try {
-            const { id, ...pacoteData } = request.body;
-            if (!id) return response.status(400).json({ error: 'ID do pacote é obrigatório.' });
-            
-            if (pacoteData.status === 'Entregue' && !pacoteData.data_entregue) {
-                pacoteData.data_entregue = new Date().toISOString();
-            }
-            
-            const { error } = await supabase.from('pacotes').update(pacoteData).match({ id });
-            if (error) throw error;
+    try {
+        const { id, status, prova_entrega_url, data_entregue, ...pacoteData } = request.body;
+        if (!id) return response.status(400).json({ error: 'ID do pacote é obrigatório.' });
 
-            await sendStatusEmail(id);
+        const updateObj = { ...pacoteData, status };
+        if (typeof prova_entrega_url === 'string') updateObj.prova_entrega_url = prova_entrega_url;
 
-            return response.status(200).json({ message: 'Pacote atualizado com sucesso!' });
-        } catch (error) {
-            return response.status(500).json({ error: 'Erro ao atualizar pacote: ' + error.message });
+        // Regra de ouro: se veio data_entregue do front, usa ela; se status virou Entregue e não veio, não mexe.
+        if (typeof data_entregue === 'string' && data_entregue.trim() !== '') {
+        updateObj.data_entregue = data_entregue; // deve ser ISO string
         }
+
+        const { error } = await supabase.from('pacotes').update(updateObj).eq('id', id);
+        if (error) throw error;
+
+        await sendStatusEmail(id);
+        return response.status(200).json({ message: 'Pacote atualizado com sucesso!' });
+    } catch (error) {
+        return response.status(500).json({ error: 'Erro ao atualizar pacote: ' + error.message });
+    }
     }
 
     // --- LÓGICA PARA CRIAR PACOTE (POST) ---
