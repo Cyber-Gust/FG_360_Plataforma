@@ -136,3 +136,62 @@
 .modal-overlay {
   cursor: default;
 }
+
+/* Overlay do modal do Financeiro */
+#financeiro-modal-overlay {
+  position: fixed;
+  inset: 0;
+  display: none;              /* é trocado pra flex no JS */
+  align-items: center;
+  justify-content: center;
+  background: rgba(0,0,0,.45);
+  z-index: 9999;
+  padding: 16px;              /* respiro nas bordas em telas pequenas */
+}
+
+/* Caixa do modal do Financeiro (menor + rolável) */
+#financeiro-modal-content {
+  width: min(560px, 92vw);    /* ↓ tamanho total */
+  max-height: min(80vh, 720px);
+  overflow-y: auto;           /* 👈 scroll vertical dentro do modal */
+  background: #fff;
+  border-radius: 14px;
+  box-shadow: 0 10px 30px rgba(0,0,0,.25);
+  padding: 16px;
+}
+
+/* Cabeçalho e rodapé fixos visualmente (opcional) */
+#financeiro-modal-content .modal-header {
+  position: sticky;
+  top: 0;
+  background: #fff;
+  padding-bottom: 8px;
+  z-index: 1;
+}
+
+#financeiro-modal-content .modal-footer {
+  position: sticky;
+  bottom: 0;
+  background: #fff;
+  padding-top: 12px;
+  margin-top: 8px;
+}
+
+/* Forms mais compactos */
+#financeiro-modal-content .form-group {
+  margin-bottom: 10px;
+}
+
+#financeiro-modal-content input,
+#financeiro-modal-content textarea {
+  width: 100%;
+}
+
+/* Mobile finesse */
+@media (max-width: 480px) {
+  #financeiro-modal-content {
+    width: 95vw;
+    max-height: 85vh;
+    padding: 12px;
+  }
+}
