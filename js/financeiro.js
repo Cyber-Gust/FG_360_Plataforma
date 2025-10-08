@@ -15,7 +15,7 @@ function clearPacoteLinkUI() {
     if (el) el.value = "";
   });
   const info = document.getElementById("pacote-info-display");
-  if (info) { info.textContent = "Sem pacote vinculado."; info.style.color = ""; }
+  if (info) { info.textContent = "Sem pedido vinculado."; info.style.color = ""; }
   const rast = document.getElementById("mov-pacote-rastreio");
   if (rast) rast.value = "";
   const unlink = document.getElementById("unlink-pacote-btn");
@@ -43,7 +43,7 @@ function openFinanceiroModal(mov = null) {
 
   // preencher campos padrão
   if (mov) {
-    if (title) title.textContent = "Editar Lançamento (Pacote)";
+    if (title) title.textContent = "Editar Lançamento (Pedido";
     (document.getElementById("mov-pacote-id") || {}).value    = mov.pacote_id || "";
     (document.getElementById("mov-cliente-id") || {}).value   = mov.cliente_id || "";
     (document.getElementById("mov-motorista-id") || {}).value = mov.motorista_id || "";
@@ -60,7 +60,7 @@ function openFinanceiroModal(mov = null) {
     (document.getElementById("mov-data-lancamento") || {}).value  = mov.data_lancamento || "";
     (document.getElementById("mov-observacoes") || {}).value      = mov.observacoes || "";
   } else {
-    if (title) title.textContent = "Novo Lançamento (Pacote)";
+    if (title) title.textContent = "Novo Lançamento (Pedido)";
     const today = new Date().toISOString().split("T")[0];
     (document.getElementById("mov-data-lancamento") || {}).value = today;
   }
@@ -76,10 +76,10 @@ function openFinanceiroModal(mov = null) {
     if (hasPacote) {
       const clienteNome = mov?.clientes?.nome_completo || "Cliente Não Vinculado";
       const rastreio    = mov?.pacotes?.codigo_rastreio || "N/A";
-      info.innerHTML = `Pacote <strong>${rastreio}</strong> • Cliente: <strong>${clienteNome}</strong>`;
+      info.innerHTML = `Pedido <strong>${rastreio}</strong> • Cliente: <strong>${clienteNome}</strong>`;
       info.style.color = "";
     } else {
-      info.textContent = "Sem pacote vinculado.";
+      info.textContent = "Sem pedido vinculado.";
       info.style.color = "";
     }
   }
@@ -107,11 +107,11 @@ function ensureFinanceModal() {
   if (document.getElementById("financeiro-modal-overlay")) return;
 
   const modalHtml = `
-  <!-- MODAL: Movimentação por Pacote -->
+  <!-- MODAL: Movimentação por Pedido -->
   <div class="modal-overlay" id="financeiro-modal-overlay" style="display:none;">
     <div class="modal-content" id="financeiro-modal-content" style="max-height: 80vh; overflow-y: auto;">
       <header class="modal-header">
-        <h2 id="financeiro-modal-title">Novo Lançamento (Pacote)</h2>
+        <h2 id="financeiro-modal-title">Novo Lançamento (Pedido)</h2>
         <button class="close-button" data-close-financeiro-modal>&times;</button>
       </header>
 
@@ -124,7 +124,7 @@ function ensureFinanceModal() {
         <input type="hidden" id="mov-veiculo-id">
 
         <div class="form-group">
-          <label>Vínculo com Pacote (opcional)</label>
+          <label>Vínculo com Pedido (opcional)</label>
 
           <div style="display:flex; align-items:center; gap:.75rem; flex-wrap:wrap;">
             <div style="display:flex; gap:.5rem; align-items:center;">
@@ -232,8 +232,8 @@ async function renderFinanceiroPage() {
     </div>
 
     <div class="flex" style="display:flex; gap:.5rem; flex-wrap:wrap; margin-bottom: .75rem;">
-      <button class="btn btn-primary" id="open-mov-pacote">Adicionar movimentação do pacote</button>
-      <button class="btn btn-secondary" id="open-mov-avulsa">Adicionar movimentação avulsa</button>
+      <button class="btn btn-primary" id="open-mov-pacote">Fazer Lançamento Manual</button>
+      <button class="btn btn-secondary" id="open-mov-avulsa">Fazer Lançamento Avulso</button>
     </div>
 
     <div class="data-table-container">
@@ -244,7 +244,7 @@ async function renderFinanceiroPage() {
           <tr>
             <th>Data</th>
             <th>Tipo</th>
-            <th>Cód. Pacote</th>
+            <th>Cód. Pedido</th>
             <th>Cliente</th>
             <th>Receita (R$)</th>
             <th>Custos (R$)</th>
@@ -606,7 +606,7 @@ async function searchAndLinkPacote({ pacoteInfoDisplay }) {
   // ✅ Se vazio: apenas considera "sem vínculo" e não bloqueia o fluxo
   if (rastreio.length === 0) {
     clearPacoteLinkUI();
-    pacoteInfoDisplay.textContent = "Sem pacote vinculado.";
+    pacoteInfoDisplay.textContent = "Sem pedido vinculado.";
     pacoteInfoDisplay.style.color = "";
     return;
   }
@@ -623,11 +623,11 @@ async function searchAndLinkPacote({ pacoteInfoDisplay }) {
 
   try {
     const response = await fetchAuthenticated(`/api/pacotes?rastreio_code=${encodeURIComponent(rastreio)}`);
-    if (!response.ok) throw new Error("Pacote não encontrado.");
+    if (!response.ok) throw new Error("Pedido não encontrado.");
 
     const result = await response.json();
     const pacote = Array.isArray(result) ? result[0] : result;
-    if (!pacote) throw new Error("Pacote não encontrado.");
+    if (!pacote) throw new Error("Pedido não encontrado.");
 
     // vincula
     (document.getElementById("mov-pacote-id") || {}).value = pacote.id || "";
@@ -636,7 +636,7 @@ async function searchAndLinkPacote({ pacoteInfoDisplay }) {
     (document.getElementById("mov-veiculo-id") || {}).value = pacote.veiculo_id || "";
 
     const clienteNome = pacote.clientes ? pacote.clientes.nome_completo : "Cliente Não Vinculado";
-    pacoteInfoDisplay.innerHTML = `Pacote <strong>${rastreio}</strong> vinculado! Cliente: <strong>${clienteNome}</strong>`;
+    pacoteInfoDisplay.innerHTML = `Pedido <strong>${rastreio}</strong> vinculado! Cliente: <strong>${clienteNome}</strong>`;
     pacoteInfoDisplay.style.color = "var(--color-success-dark)";
 
     const unlink = document.getElementById("unlink-pacote-btn");
