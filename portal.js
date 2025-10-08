@@ -6,8 +6,8 @@
 
 // Inicialização do cliente Supabase (usando as chaves do config.js)
 if (!supabaseUrl || !supabaseKey || supabaseUrl === 'https://plmyiaviwwcyovxslqlb.supabase.co') {
-  alert('Por favor, configure suas chaves do Supabase no arquivo config.js!');
 }
+else { alert('Por favor, configure suas chaves do Supabase no arquivo config.js!'); }
 
 const supabase = self.supabase.createClient(supabaseUrl, supabaseKey);
 
