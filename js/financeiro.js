@@ -22,6 +22,8 @@ function ensureFinanceModal() {
       </header>
 
       <form id="finance-mov-form" class="modal-form">
+        <input type="hidden" id="mov-id">
+
         <input type="hidden" id="mov-pacote-id">
         <input type="hidden" id="mov-cliente-id">
         <input type="hidden" id="mov-motorista-id">
@@ -36,9 +38,15 @@ function ensureFinanceModal() {
           <small id="pacote-info-display"></small>
         </div>
 
-        <div class="form-group"><label>Valor Pedido</label><input id="mov-valor-pedido" type="number" step="0.01"></div>
+        <div class="form-group"><label>Valor Pedido (Receita)</label><input id="mov-valor-pedido" type="number" step="0.01"></div>
         <div class="form-group"><label>Custo Motorista</label><input id="mov-custo-motorista" type="number" step="0.01"></div>
         <div class="form-group"><label>Custo Veículo</label><input id="mov-custo-veiculo" type="number" step="0.01"></div>
+
+        <div class="form-group"><label>Imposto</label><input id="mov-imposto" type="number" step="0.01"></div>
+        <div class="form-group"><label>Custo Operação</label><input id="mov-custo-operacao" type="number" step="0.01"></div>
+        <div class="form-group"><label>Custo Descarga</label><input id="mov-custo-descarga" type="number" step="0.01"></div>
+        <div class="form-group"><label>Custo Seguro</label><input id="mov-custo-seguro" type="number" step="0.01"></div>
+
         <div class="form-group"><label>Data Lançamento</label><input id="mov-data-lancamento" type="date" required></div>
         <div class="form-group"><label>Observações</label><textarea id="mov-observacoes"></textarea></div>
 
@@ -58,38 +66,6 @@ function ensureFinanceModal() {
 // ===============================================
 async function renderFinanceiroPage() {
   const pageContent = document.getElementById('page-content');
-
-  document.querySelectorAll('.btn-edit-mov').forEach(b => {
-    if (b.dataset.bound) return; b.dataset.bound = '1';
-    b.addEventListener('click', async (e) => {
-      const id = e.currentTarget.closest('tr').dataset.id;
-      const resp = await fetchAuthenticated(`/api/financeiro?id=${id}`);
-      if (resp.ok) {
-        const mov = await resp.json();
-        // TODO: abrir o mesmo modal já preenchido (deixo o esqueleto)
-        // openFinanceiroModal(mov);
-        alert('Stub: abrir modal de edição com dados do ID ' + id);
-      } else {
-        alert('Erro ao carregar lançamento.');
-      }
-    });
-  });
-
-  document.querySelectorAll('.btn-delete-mov').forEach(b => {
-    if (b.dataset.bound) return; b.dataset.bound = '1';
-    b.addEventListener('click', async (e) => {
-      const id = e.currentTarget.closest('tr').dataset.id;
-      if (!confirm('Tem certeza que deseja excluir este lançamento?')) return;
-      const res = await fetchAuthenticated(`/api/financeiro?id=${encodeURIComponent(id)}`, { method: 'DELETE' });
-      if (!res.ok) {
-        const j = await res.json().catch(() => ({}));
-        alert('Erro ao excluir: ' + (j.error || res.statusText));
-      } else {
-        loadFinancialTransactions();
-        updateFinanceReports();
-      }
-    });
-  });
 
   // HTML da página do Financeiro
   pageContent.innerHTML = `
@@ -121,12 +97,13 @@ async function renderFinanceiroPage() {
               <th>Receita (R$)</th>
               <th>Custo Motorista (R$)</th>
               <th>Custo Veículo (R$)</th>
+              <th>Outros Custos (R$)</th>
               <th>Lucro (R$)</th>
               <th>Ações</th>
             </tr>
             </thead>
             <tbody id="financial-transactions-body">
-              <tr><td colspan="8">Carregando lançamentos...</td></tr>
+              <tr><td colspan="9">Carregando lançamentos...</td></tr>
             </tbody>
           </table>
         </div>
@@ -185,15 +162,12 @@ async function updateFinanceReports() {
 
     const data = await response.json();
 
-    // suporta API com custo_total OU com custo_motorista_total separado
     const receita_total = Number(data.receita_total || 0);
-    const custo_total = data.custo_total != null
-      ? Number(data.custo_total)
-      : Number(data.custo_motorista_total || 0); // compat
+    const custo_total = Number(data.custo_total || 0);
     const lucro_liquido = Number(
       data.lucro_liquido != null
         ? data.lucro_liquido
-        : receita_total - (data.custo_motorista_total || 0) - (data.custo_veiculo_total || 0)
+        : receita_total - (Number(data.custo_motorista_total || 0) + Number(data.custo_veiculo_total || 0))
     );
     const total_entradas = Number(data.total_entradas || 0);
 
@@ -209,7 +183,7 @@ async function updateFinanceReports() {
       <div class="stat-card" style="border-left: 5px solid var(--color-danger);">
         <div class="stat-card-info">
           <span class="stat-card-value" id="total-custo">${formatCurrency(custo_total)}</span>
-          <span class="stat-card-label">Custo Total (Motorista + Veículo)</span>
+          <span class="stat-card-label">Custo Total (Motorista, Veículo e Outros)</span>
         </div>
       </div>
       <div class="stat-card" style="border-left: 5px solid ${lucroColor};">
@@ -229,7 +203,7 @@ async function updateFinanceReports() {
 // ===============================================
 async function loadFinancialTransactions() {
   const tbody = document.getElementById('financial-transactions-body');
-  tbody.innerHTML = '<tr><td colspan="8">Carregando dados...</td></tr>';
+  tbody.innerHTML = '<tr><td colspan="9">Carregando dados...</td></tr>';
 
   try {
     const response = await fetchAuthenticated('/api/financeiro');
@@ -238,7 +212,7 @@ async function loadFinancialTransactions() {
     const transactions = await response.json();
 
     if (!Array.isArray(transactions) || transactions.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="8" class="no-data-message">Nenhum lançamento encontrado.</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="9" class="no-data-message">Nenhum lançamento encontrado.</td></tr>';
       return;
     }
 
@@ -246,7 +220,13 @@ async function loadFinancialTransactions() {
       const receita = Number(t.valor_pedido || 0);
       const cm = Number(t.custo_motorista || 0);
       const cv = Number(t.custo_veiculo || 0);
-      const lucro = receita - (cm + cv);
+      const imp = Number(t.imposto || 0);
+      const op  = Number(t.custo_operacao || 0);
+      const des = Number(t.custo_descarga || 0);
+      const seg = Number(t.custo_seguro || 0);
+      const outros = imp + op + des + seg;
+
+      const lucro = receita - (cm + cv + outros);
       const lucroColor = lucro >= 0 ? 'var(--color-success-dark)' : 'var(--color-danger-dark)';
       const dt = t.data_lancamento ? new Date(t.data_lancamento) : null;
       const dataFmt = dt && !isNaN(dt) ? dt.toLocaleDateString('pt-BR') : '-';
@@ -259,6 +239,7 @@ async function loadFinancialTransactions() {
           <td style="color: var(--color-success-dark);">${formatCurrency(receita, '-')}</td>
           <td style="color: var(--color-danger-dark);">${formatCurrency(cm, '-')}</td>
           <td style="color: var(--color-danger-dark);">${formatCurrency(cv, '-')}</td>
+          <td style="color: var(--color-danger-dark);">${formatCurrency(outros, '-')}</td>
           <td style="font-weight:600;color:${lucroColor};">${formatCurrency(lucro)}</td>
           <td class="actions">
             <button class="btn-icon btn-edit-mov" title="Editar">
@@ -280,8 +261,7 @@ async function loadFinancialTransactions() {
         const resp = await fetchAuthenticated(`/api/financeiro?id=${encodeURIComponent(id)}`);
         if (!resp.ok) return alert('Erro ao carregar lançamento.');
         const mov = await resp.json();
-        // TODO: abrir modal preenchido (deixo stub)
-        alert(`Stub editar: ${id} (${mov?.clientes?.nome_completo ?? 'sem cliente'})`);
+        openFinanceiroModal(mov);
       });
     });
 
@@ -301,12 +281,12 @@ async function loadFinancialTransactions() {
     });
 
   } catch (error) {
-    tbody.innerHTML = `<tr><td colspan="8" class="error-message">Erro ao carregar dados: ${error.message}</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="9" class="error-message">Erro ao carregar dados: ${error.message}</td></tr>`;
   }
 }
 
 // ===============================================
-// 4) MODAL (NOVO LANÇAMENTO)
+// 4) MODAL (NOVO/EDITAR LANÇAMENTO)
 // ===============================================
 function setupModalListeners({ financeMovModal, financeMovForm, pacoteInfoDisplay }) {
   if (!financeMovModal || !financeMovForm) return;
@@ -319,11 +299,8 @@ function setupModalListeners({ financeMovModal, financeMovForm, pacoteInfoDispla
   if (openBtn && !openBtn.dataset.bound) {
     openBtn.dataset.bound = '1';
     openBtn.addEventListener('click', () => {
-      const title = document.getElementById('finance-modal-title');
-      if (title) title.textContent = 'Novo Lançamento Financeiro';
-      financeMovForm.reset();
       if (pacoteInfoDisplay) { pacoteInfoDisplay.textContent = ''; pacoteInfoDisplay.style.color = ''; }
-      financeMovModal.style.display = 'flex';
+      openFinanceiroModal(null); // modo "novo"
     });
   }
 
@@ -341,6 +318,51 @@ function setupModalListeners({ financeMovModal, financeMovForm, pacoteInfoDispla
   }
 
   financeMovForm.addEventListener('submit', (e) => handleFinanceFormSubmit(e, { financeMovModal }), { once: false });
+}
+
+// Abre o modal em modo "novo" ou "editar" preenchendo os campos
+function openFinanceiroModal(mov = null) {
+  const modal = document.getElementById('finance-mov-modal');
+  const form  = document.getElementById('finance-mov-form');
+  const title = document.getElementById('finance-modal-title');
+  if (!modal || !form) return;
+
+  form.reset();
+  form.dataset.mode = mov ? 'edit' : 'new';
+  (document.getElementById('mov-id') || {}).value = mov?.id || '';
+
+  if (mov) {
+    if (title) title.textContent = 'Editar Lançamento Financeiro';
+    (document.getElementById('mov-pacote-id') || {}).value = mov.pacote_id || '';
+    (document.getElementById('mov-cliente-id') || {}).value = mov.cliente_id || '';
+    (document.getElementById('mov-motorista-id') || {}).value = mov.motorista_id || '';
+    (document.getElementById('mov-veiculo-id') || {}).value = mov.veiculo_id || '';
+
+    (document.getElementById('mov-valor-pedido') || {}).value = mov.valor_pedido ?? '';
+    (document.getElementById('mov-custo-motorista') || {}).value = mov.custo_motorista ?? '';
+    (document.getElementById('mov-custo-veiculo') || {}).value = mov.custo_veiculo ?? '';
+
+    (document.getElementById('mov-imposto') || {}).value = mov.imposto ?? '';
+    (document.getElementById('mov-custo-operacao') || {}).value = mov.custo_operacao ?? '';
+    (document.getElementById('mov-custo-descarga') || {}).value = mov.custo_descarga ?? '';
+    (document.getElementById('mov-custo-seguro') || {}).value = mov.custo_seguro ?? '';
+
+    (document.getElementById('mov-data-lancamento') || {}).value = mov.data_lancamento || '';
+    (document.getElementById('mov-observacoes') || {}).value = mov.observacoes || '';
+
+    // exibir código de rastreio/cliente informativo no modal
+    const info = document.getElementById('pacote-info-display');
+    if (info) {
+      const clienteNome = mov.clientes?.nome_completo || 'Cliente Não Vinculado';
+      const rastreio = mov.pacotes?.codigo_rastreio || 'N/A';
+      info.innerHTML = `Pacote <strong>${rastreio}</strong> • Cliente: <strong>${clienteNome}</strong>`;
+      info.style.color = '';
+    }
+  } else {
+    if (title) title.textContent = 'Novo Lançamento Financeiro';
+  }
+
+  modal.style.display = 'flex';
 }
 
 async function searchAndLinkPacote({ pacoteInfoDisplay }) {
@@ -397,6 +419,8 @@ async function handleFinanceFormSubmit(e, { financeMovModal }) {
 
   try {
     const payload = {
+      id: (document.getElementById('mov-id') || {}).value || null,
+
       pacote_id: (document.getElementById('mov-pacote-id') || {}).value || null,
       cliente_id: (document.getElementById('mov-cliente-id') || {}).value || null,
       motorista_id: (document.getElementById('mov-motorista-id') || {}).value || null,
@@ -406,17 +430,33 @@ async function handleFinanceFormSubmit(e, { financeMovModal }) {
       custo_motorista: parseFloat((document.getElementById('mov-custo-motorista') || {}).value) || null,
       custo_veiculo: parseFloat((document.getElementById('mov-custo-veiculo') || {}).value) || null,
 
+      imposto: parseFloat((document.getElementById('mov-imposto') || {}).value) || null,
+      custo_operacao: parseFloat((document.getElementById('mov-custo-operacao') || {}).value) || null,
+      custo_descarga: parseFloat((document.getElementById('mov-custo-descarga') || {}).value) || null,
+      custo_seguro: parseFloat((document.getElementById('mov-custo-seguro') || {}).value) || null,
+
       data_lancamento: (document.getElementById('mov-data-lancamento') || {}).value,
       observacoes: (document.getElementById('mov-observacoes') || {}).value,
     };
 
     if (!payload.data_lancamento) throw new Error('A data do lançamento é obrigatória.');
-    if (!payload.valor_pedido && !payload.custo_motorista && !payload.custo_veiculo) {
-      throw new Error('Insira pelo menos um valor (Receita, Custo Motorista ou Custo Veículo).');
+    if (
+      !payload.valor_pedido &&
+      !payload.custo_motorista &&
+      !payload.custo_veiculo &&
+      !payload.imposto &&
+      !payload.custo_operacao &&
+      !payload.custo_descarga &&
+      !payload.custo_seguro
+    ) {
+      throw new Error('Insira pelo menos um valor (Receita ou algum Custo).');
     }
 
+    const isEdit = Boolean(payload.id);
+    const method = isEdit ? 'PUT' : 'POST';
+
     const response = await fetchAuthenticated('/api/financeiro', {
-      method: 'POST',
+      method,
       body: JSON.stringify(payload)
     });
 
@@ -425,10 +465,10 @@ async function handleFinanceFormSubmit(e, { financeMovModal }) {
       throw new Error(errorData.error || 'Falha ao salvar lançamento.');
     }
 
-    alert('Lançamento salvo com sucesso!');
+    alert(isEdit ? 'Lançamento atualizado com sucesso!' : 'Lançamento salvo com sucesso!');
     if (financeMovModal) financeMovModal.style.display = 'none';
-    updateFinanceReports();
-    loadFinancialTransactions();
+    await updateFinanceReports();
+    await loadFinancialTransactions();
   } catch (error) {
     alert(`Erro ao salvar: ${error.message}`);
   } finally {
@@ -436,5 +476,6 @@ async function handleFinanceFormSubmit(e, { financeMovModal }) {
       submitBtn.disabled = false;
       submitBtn.textContent = 'Salvar Lançamento';
     }
+    handleFinanceFormSubmit._busy = false;
   }
 }
