@@ -181,3 +181,13 @@ using (auth.role() = 'authenticated');
 create policy "Usuários autenticados podem deletar movimentacoes"
 on movimentacoes_financeiras for delete
 using (auth.role() = 'authenticated');
+
+-- 🔧 Campos para movimentações avulsas (não ligadas a pacote)
+alter table movimentacoes_financeiras
+  add column if not exists is_avulsa boolean not null default false,
+  add column if not exists avulsa_tipo text check (avulsa_tipo in ('receita','custo')),
+  add column if not exists avulsa_valor numeric(10,2),
+  add column if not exists avulsa_descricao text;
+
+-- 👌 (opcional) índice por data p/ relatórios rápidos
+create index if not exists idx_mov_fin_data on movimentacoes_financeiras (data_lancamento);
