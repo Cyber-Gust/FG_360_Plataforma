@@ -59,6 +59,38 @@ function ensureFinanceModal() {
 async function renderFinanceiroPage() {
   const pageContent = document.getElementById('page-content');
 
+  document.querySelectorAll('.btn-edit-mov').forEach(b => {
+    if (b.dataset.bound) return; b.dataset.bound = '1';
+    b.addEventListener('click', async (e) => {
+      const id = e.currentTarget.closest('tr').dataset.id;
+      const resp = await fetchAuthenticated(`/api/financeiro?id=${id}`);
+      if (resp.ok) {
+        const mov = await resp.json();
+        // TODO: abrir o mesmo modal já preenchido (deixo o esqueleto)
+        // openFinanceiroModal(mov);
+        alert('Stub: abrir modal de edição com dados do ID ' + id);
+      } else {
+        alert('Erro ao carregar lançamento.');
+      }
+    });
+  });
+
+  document.querySelectorAll('.btn-delete-mov').forEach(b => {
+    if (b.dataset.bound) return; b.dataset.bound = '1';
+    b.addEventListener('click', async (e) => {
+      const id = e.currentTarget.closest('tr').dataset.id;
+      if (!confirm('Tem certeza que deseja excluir este lançamento?')) return;
+      const res = await fetchAuthenticated(`/api/financeiro?id=${encodeURIComponent(id)}`, { method: 'DELETE' });
+      if (!res.ok) {
+        const j = await res.json().catch(() => ({}));
+        alert('Erro ao excluir: ' + (j.error || res.statusText));
+      } else {
+        loadFinancialTransactions();
+        updateFinanceReports();
+      }
+    });
+  });
+  
   // HTML da página do Financeiro
   pageContent.innerHTML = `
     <div id="financeiro-content">
@@ -250,36 +282,38 @@ async function loadFinancialTransactions() {
 // 4) MODAL (NOVO LANÇAMENTO)
 // ===============================================
 function setupModalListeners({ financeMovModal, financeMovForm, pacoteInfoDisplay }) {
+  if (!financeMovModal || !financeMovForm) return;
+
+  // 👉 evita listeners duplicados
+  if (financeMovForm.dataset.bound === '1') return;
+  financeMovForm.dataset.bound = '1';
+
   const openBtn = document.getElementById('open-new-mov-modal');
-  if (!openBtn || !financeMovModal || !financeMovForm) return;
-
-  // abrir modal
-  openBtn.addEventListener('click', () => {
-    const title = document.getElementById('finance-modal-title');
-    if (title) title.textContent = 'Novo Lançamento Financeiro';
-    financeMovForm.reset();
-    if (pacoteInfoDisplay) {
-      pacoteInfoDisplay.textContent = '';
-      pacoteInfoDisplay.style.color = '';
-    }
-    financeMovModal.style.display = 'flex';
-  });
-
-  // fechar modal
-  financeMovModal.querySelectorAll('[data-close-modal]').forEach(button => {
-    button.addEventListener('click', () => {
-      financeMovModal.style.display = 'none';
+  if (openBtn && !openBtn.dataset.bound) {
+    openBtn.dataset.bound = '1';
+    openBtn.addEventListener('click', () => {
+      const title = document.getElementById('finance-modal-title');
+      if (title) title.textContent = 'Novo Lançamento Financeiro';
+      financeMovForm.reset();
+      if (pacoteInfoDisplay) { pacoteInfoDisplay.textContent = ''; pacoteInfoDisplay.style.color = ''; }
+      financeMovModal.style.display = 'flex';
     });
+  }
+
+  financeMovModal.querySelectorAll('[data-close-modal]').forEach(btn => {
+    if (!btn.dataset.bound) {
+      btn.dataset.bound = '1';
+      btn.addEventListener('click', () => { financeMovModal.style.display = 'none'; });
+    }
   });
 
-  // busca de pacote
   const searchBtn = document.getElementById('search-pacote-btn');
-  if (searchBtn) {
+  if (searchBtn && !searchBtn.dataset.bound) {
+    searchBtn.dataset.bound = '1';
     searchBtn.addEventListener('click', () => searchAndLinkPacote({ pacoteInfoDisplay }));
   }
 
-  // submit
-  financeMovForm.addEventListener('submit', (e) => handleFinanceFormSubmit(e, { financeMovModal }));
+  financeMovForm.addEventListener('submit', (e) => handleFinanceFormSubmit(e, { financeMovModal }), { once: false });
 }
 
 async function searchAndLinkPacote({ pacoteInfoDisplay }) {
@@ -316,7 +350,7 @@ async function searchAndLinkPacote({ pacoteInfoDisplay }) {
   } catch (error) {
     pacoteInfoDisplay.textContent = `Erro: ${error.message}`;
     pacoteInfoDisplay.style.color = 'var(--color-danger-dark)';
-    ['mov-pacote-id','mov-cliente-id','mov-motorista-id','mov-veiculo-id'].forEach(id => {
+    ['mov-pacote-id', 'mov-cliente-id', 'mov-motorista-id', 'mov-veiculo-id'].forEach(id => {
       const el = document.getElementById(id);
       if (el) el.value = '';
     });
@@ -325,6 +359,8 @@ async function searchAndLinkPacote({ pacoteInfoDisplay }) {
 
 async function handleFinanceFormSubmit(e, { financeMovModal }) {
   e.preventDefault();
+  if (handleFinanceFormSubmit._busy) return;  // 🚫 evita duplo clique + doubles
+  handleFinanceFormSubmit._busy = true;
 
   const submitBtn = document.getElementById('submit-mov-btn');
   if (submitBtn) {
@@ -334,17 +370,17 @@ async function handleFinanceFormSubmit(e, { financeMovModal }) {
 
   try {
     const payload = {
-      pacote_id:    (document.getElementById('mov-pacote-id') || {}).value || null,
-      cliente_id:   (document.getElementById('mov-cliente-id') || {}).value || null,
+      pacote_id: (document.getElementById('mov-pacote-id') || {}).value || null,
+      cliente_id: (document.getElementById('mov-cliente-id') || {}).value || null,
       motorista_id: (document.getElementById('mov-motorista-id') || {}).value || null,
-      veiculo_id:   (document.getElementById('mov-veiculo-id') || {}).value || null,
+      veiculo_id: (document.getElementById('mov-veiculo-id') || {}).value || null,
 
-      valor_pedido:   parseFloat((document.getElementById('mov-valor-pedido') || {}).value) || null,
-      custo_motorista:parseFloat((document.getElementById('mov-custo-motorista') || {}).value) || null,
-      custo_veiculo:  parseFloat((document.getElementById('mov-custo-veiculo') || {}).value) || null,
+      valor_pedido: parseFloat((document.getElementById('mov-valor-pedido') || {}).value) || null,
+      custo_motorista: parseFloat((document.getElementById('mov-custo-motorista') || {}).value) || null,
+      custo_veiculo: parseFloat((document.getElementById('mov-custo-veiculo') || {}).value) || null,
 
       data_lancamento: (document.getElementById('mov-data-lancamento') || {}).value,
-      observacoes:     (document.getElementById('mov-observacoes') || {}).value,
+      observacoes: (document.getElementById('mov-observacoes') || {}).value,
     };
 
     if (!payload.data_lancamento) throw new Error('A data do lançamento é obrigatória.');

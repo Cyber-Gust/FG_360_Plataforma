@@ -24,39 +24,62 @@ const supabase = createClient(supabaseUrl, supabaseServiceKey, {
  * - Retorna custo_total e lucro_liquido prontos.
  */
 async function fetchAggregatedData(startDate, endDate) {
-  let query = supabase
-    .from('movimentacoes_financeiras')
-    .select(`
-      receita_total:sum(valor_pedido),
-      custo_motorista_total:sum(custo_motorista),
-      custo_veiculo_total:sum(custo_veiculo),
-      total_entradas:count(id)
-    `);
+  const sd = typeof startDate === 'string' ? startDate : null;
+  const ed = typeof endDate === 'string' ? endDate : null;
 
-  if (startDate && endDate) {
-    // filtro inclusivo de data simples; se quiser incluir “final do dia”, trate no front (endDate + 1)
-    query = query.gte('data_lancamento', startDate).lte('data_lancamento', endDate);
+  // 1) tenta via SQL (rápido)
+  try {
+    let q = supabase
+      .from('movimentacoes_financeiras')
+      .select(`
+        receita_total:sum(valor_pedido),
+        custo_motorista_total:sum(custo_motorista),
+        custo_veiculo_total:sum(custo_veiculo),
+        total_entradas:count(id)
+      `);
+    if (sd && ed) q = q.gte('data_lancamento', sd).lte('data_lancamento', ed);
+
+    const { data, error } = await q;
+    if (error) throw error;
+
+    const a = data?.[0] || {};
+    const receita = toNum(a.receita_total);
+    const cm = toNum(a.custo_motorista_total);
+    const cv = toNum(a.custo_veiculo_total);
+
+    return {
+      total_entradas: toNum(a.total_entradas),
+      receita_total: receita,
+      custo_motorista_total: cm,
+      custo_veiculo_total: cv,
+      custo_total: cm + cv,
+      lucro_liquido: receita - cm - cv,
+    };
+  } catch (e) {
+    // 2) fallback: soma no server (resiliente a colunas TEXT)
+    let q = supabase
+      .from('movimentacoes_financeiras')
+      .select('valor_pedido,custo_motorista,custo_veiculo', { count: 'exact' });
+    if (sd && ed) q = q.gte('data_lancamento', sd).lte('data_lancamento', ed);
+
+    const { data: rows, count, error } = await q;
+    if (error) throw error;
+
+    let receita = 0, cm = 0, cv = 0;
+    for (const r of (rows || [])) {
+      receita += toNum(r.valor_pedido);
+      cm      += toNum(r.custo_motorista);
+      cv      += toNum(r.custo_veiculo);
+    }
+    return {
+      total_entradas: count || 0,
+      receita_total: receita,
+      custo_motorista_total: cm,
+      custo_veiculo_total: cv,
+      custo_total: cm + cv,
+      lucro_liquido: receita - cm - cv,
+    };
   }
-
-  const { data, error } = await query;
-  if (error) throw error;
-
-  const agg = (data && data[0]) || {};
-
-  const receita        = Number(agg.receita_total) || 0;
-  const custoMotorista = Number(agg.custo_motorista_total) || 0;
-  const custoVeiculo   = Number(agg.custo_veiculo_total) || 0;
-  const custoTotal     = custoMotorista + custoVeiculo;
-  const lucroLiquido   = receita - custoMotorista - custoVeiculo;
-
-  return {
-    total_entradas: Number(agg.total_entradas) || 0,
-    receita_total: receita,
-    custo_motorista_total: custoMotorista,
-    custo_veiculo_total: custoVeiculo,
-    custo_total: custoTotal,
-    lucro_liquido: lucroLiquido,
-  };
 }
 
 /**
