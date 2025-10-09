@@ -21,10 +21,10 @@ async function renderCustosPage() {
     pageContent.innerHTML = `
         <div id="custos-content">
             <div class="flex" style="display:flex; gap:.5rem; flex-wrap:wrap; margin-bottom: .75rem;">
-                <button class="btn btn-primary" id="open-custo-modal-btn">Adicionar Custo</button>
+                <button class="btn btn-primary" id="open-custo-modal-btn">Adicionar Faturamento</button>
             </div>
             <div class="data-table-container">
-                <h3 class="recent-packages-title">Lançamentos de Custos</h3>
+                <h3 class="recent-packages-title">Faturamento</h3>
                 <div class="table-wrapper" style="overflow-x: auto;">
                     <table class="data-table">
                         <thead>
@@ -57,15 +57,15 @@ async function renderCustosPage() {
 // ===============================================
 async function loadCustos() {
     const tbody = document.getElementById("custos-table-body");
-    tbody.innerHTML = '<tr><td colspan="6">Carregando custos...</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="6">Carregando faturamentos...</td></tr>';
 
     try {
         const response = await fetchAuthenticated("/api/custos");
-        if (!response.ok) throw new Error("Falha ao carregar custos.");
+        if (!response.ok) throw new Error("Falha ao carregar faturamentos.");
         const custos = await response.json();
 
         if (!custos || custos.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="6" class="no-data-message">Nenhum custo lançado.</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="6" class="no-data-message">Nenhum faturamento lançado.</td></tr>';
             return;
         }
 
@@ -109,7 +109,7 @@ function ensureCustosModal() {
     <div class="modal-overlay" id="custos-modal-overlay" style="display:none;">
       <div class="modal-content" style="max-height: 80vh; overflow-y: auto;">
         <header class="modal-header">
-          <h2 id="custos-modal-title">Adicionar Custo</h2>
+          <h2 id="custos-modal-title">Adicionar Faturamento</h2>
           <button class="close-button" data-close-custos-modal>&times;</button>
         </header>
         <form id="custos-form" class="modal-form">
@@ -189,7 +189,7 @@ function openCustosModal(custo = null) {
     });
 
     if (custo) {
-        title.textContent = 'Editar Custo';
+        title.textContent = 'Editar Faturamento';
         select.value = custo.motorista_id;
         // Linha que preenchia o CPF foi removida
         document.getElementById('custo-data').value = custo.data_custo;
@@ -203,7 +203,7 @@ function openCustosModal(custo = null) {
             document.getElementById('anexo2-preview').innerHTML = `Anexo salvo: <a href="${custo.anexo2_url}" target="_blank" class="link">Ver</a>. Envie um novo para substituir.`;
         }
     } else {
-        title.textContent = 'Adicionar Custo';
+        title.textContent = 'Adicionar Faturamento';
         document.getElementById('custo-data').value = new Date().toISOString().split('T')[0];
     }
 
@@ -242,7 +242,7 @@ function setupCustosListeners() {
         const deleteBtn = e.target.closest('.btn-delete-custo');
         if (deleteBtn) {
             const id = deleteBtn.closest('tr').dataset.id;
-            if (!confirm('Tem certeza que deseja excluir este lançamento de custo? Os anexos também serão permanentemente removidos.')) return;
+            if (!confirm('Tem certeza que deseja excluir este Faturamento? Os anexos também serão permanentemente removidos.')) return;
             
             try {
                 const response = await fetchAuthenticated(`/api/custos?id=${id}`, { method: 'DELETE' });
@@ -321,10 +321,10 @@ async function handleCustoFormSubmit(e) {
 
         if (!response.ok) {
             const { error } = await response.json().catch(() => ({}));
-            throw new Error(error || 'Falha ao salvar o custo.');
+            throw new Error(error || 'Falha ao salvar o faturamento.');
         }
 
-        alert('Custo salvo com sucesso!');
+        alert('Faturamento salvo com sucesso!');
         document.getElementById('custos-modal-overlay').style.display = 'none';
         await loadCustos();
 
