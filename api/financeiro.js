@@ -126,12 +126,11 @@ export default async function handler(request, response) {
         .from('movimentacoes_financeiras')
         .select(`
           *,
-          cte, // <--- ADICIONADO AQUI
           pacotes(codigo_rastreio),
           clientes(nome_completo),
           motoristas(nome_completo),
           veiculos(placa, modelo)
-        `)
+        `) // <--- AQUI ESTAVA O ERRO. O 'cte,' FOI REMOVIDO.
         .order('data_lancamento', { ascending: false });
 
       if (id) {
@@ -144,6 +143,8 @@ export default async function handler(request, response) {
         return response.status(200).json(data || []);
       }
     } catch (error) {
+      // Adicione um console.log para ver o erro detalhado no terminal do servidor no futuro
+      console.error("Erro na API GET /financeiro:", error); 
       return response.status(500).json({ error: 'Erro ao buscar dados financeiros: ' + error.message });
     }
   }

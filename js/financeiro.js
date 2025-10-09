@@ -319,7 +319,7 @@ async function loadFinancialTransactions() {
 
     tbody.innerHTML = transactions.map((t) => {
       const isAv = !!t.is_avulsa;
-      const tipo = isAv ? (t.avulsa_tipo === 'receita' ? 'Avulsa • Receita' : 'Avulsa • Custo') : 'Pacote';
+      const tipo = isAv ? (t.avulsa_tipo === 'receita' ? 'Avulsa • Receita' : 'Avulsa • Custo') : 'Pedido';
 
       // Valores (pacote)
       const receitaPac = Number(t.valor_pedido || 0);
