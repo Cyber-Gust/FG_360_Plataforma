@@ -114,10 +114,18 @@ navLinks.forEach(link => {
 
 // Função central que carrega o conteúdo da página selecionada
 function loadPageContent(page) {
-    const title = page.charAt(0).toUpperCase() + page.slice(1);
+    // --- LÓGICA DE TÍTULO ATUALIZADA ---
+    // 1. Encontra o link do menu que foi clicado
+    const link = document.querySelector(`.nav-link[data-page="${page}"]`);
+    
+    // 2. Pega o texto de dentro do link para usar como título
+    const title = link ? link.textContent : page.charAt(0).toUpperCase() + page.slice(1);
+    
+    // 3. Define o título no H1 da página
     pageTitle.textContent = title;
+    // --- FIM DA LÓGICA DE TÍTULO ---
 
-    // Chama a função de renderização correspondente de cada arquivo JS
+    // Chama a função de renderização correspondente de cada arquivo JS (sua estrutura if/else if)
     if (page === 'dashboard') {
         renderDashboardPage();
     } else if (page === 'clientes') {
