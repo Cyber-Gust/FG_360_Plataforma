@@ -33,15 +33,21 @@ export default async function handler(request, response) {
   if (request.method === 'GET') {
     try {
       const { id } = request.query;
+      
+      // Ajuste: Removido 'cpf' da consulta
       let query = supabase.from('custos')
         .select(`
           *,
-          motoristas ( nome_completo, cpf )
+          motoristas!motorista_id ( nome_completo )
         `)
         .order('data_custo', { ascending: false });
 
       if (id) {
-        const { data, error } = await query.eq('id', id).single();
+        // Ajuste: Removido 'cpf' da consulta para um único item
+        const { data, error } = await supabase.from('custos')
+          .select(`*, motoristas!motorista_id ( nome_completo )`)
+          .eq('id', id)
+          .single();
         if (error) throw error;
         return response.status(200).json(data);
       } else {
@@ -50,6 +56,7 @@ export default async function handler(request, response) {
         return response.status(200).json(data || []);
       }
     } catch (error) {
+      console.error("Erro na API GET /custos:", error);
       return response.status(500).json({ error: 'Erro ao buscar custos: ' + error.message });
     }
   }

@@ -123,11 +123,6 @@ function ensureCustosModal() {
           </div>
           
           <div class="form-group">
-            <label for="custo-cpf">CPF</label>
-            <input type="text" id="custo-cpf" disabled placeholder="Preenchido automaticamente">
-          </div>
-          
-          <div class="form-group">
             <label for="custo-data">Data</label>
             <input type="date" id="custo-data" required>
           </div>
@@ -180,25 +175,23 @@ function openCustosModal(custo = null) {
     form.dataset.mode = custo ? 'edit' : 'new';
     document.getElementById('custo-id').value = custo?.id || '';
 
-    // Limpa previews de anexos
     document.getElementById('anexo1-preview').innerHTML = '';
     document.getElementById('anexo2-preview').innerHTML = '';
 
-    // Popula a lista de motoristas
     const select = document.getElementById('custo-motorista-id');
-    select.innerHTML = '<option value="">Selecione um motorista...</option>'; // Reseta
+    select.innerHTML = '<option value="">Selecione um motorista...</option>';
     listaDeMotoristas.forEach(m => {
         const option = document.createElement('option');
         option.value = m.id;
         option.textContent = m.nome_completo;
-        option.dataset.cpf = m.cpf || '';
+        // option.dataset.cpf foi removido daqui
         select.appendChild(option);
     });
 
     if (custo) {
         title.textContent = 'Editar Custo';
         select.value = custo.motorista_id;
-        document.getElementById('custo-cpf').value = custo.motoristas?.cpf || '';
+        // Linha que preenchia o CPF foi removida
         document.getElementById('custo-data').value = custo.data_custo;
         document.getElementById('custo-chave-pix').value = custo.chave_pix || '';
         document.getElementById('custo-adiantamento').value = custo.valor_adiantamento ?? '';
@@ -211,7 +204,6 @@ function openCustosModal(custo = null) {
         }
     } else {
         title.textContent = 'Adicionar Custo';
-        document.getElementById('custo-cpf').value = '';
         document.getElementById('custo-data').value = new Date().toISOString().split('T')[0];
     }
 
@@ -222,28 +214,20 @@ function openCustosModal(custo = null) {
 // EVENTOS E SUBMISSÃO DO FORMULÁRIO
 // ===============================================
 function setupCustosListeners() {
-    // Listener para abrir o modal
     document.getElementById('open-custo-modal-btn')?.addEventListener('click', () => {
         openCustosModal(null);
     });
 
-    // Listeners para fechar o modal
     document.querySelectorAll('[data-close-custos-modal]').forEach(el => {
         el.addEventListener('click', () => {
             document.getElementById('custos-modal-overlay').style.display = 'none';
         });
     });
 
-    // Listener para auto-preencher CPF
-    document.getElementById('custo-motorista-id')?.addEventListener('change', (e) => {
-        const selectedOption = e.target.options[e.target.selectedIndex];
-        document.getElementById('custo-cpf').value = selectedOption.dataset.cpf || '';
-    });
+    // vvvvvv LISTENER PARA AUTO-PREENCHER CPF FOI REMOVIDO DAQUI vvvvvv
 
-    // Listener para o formulário
     document.getElementById('custos-form')?.addEventListener('submit', handleCustoFormSubmit);
 
-    // Event Delegation para os botões da tabela
     const tbody = document.getElementById('custos-table-body');
     tbody.addEventListener('click', async (e) => {
         const editBtn = e.target.closest('.btn-edit-custo');
@@ -266,7 +250,7 @@ function setupCustosListeners() {
                     const { error } = await response.json().catch(() => ({}));
                     throw new Error(error || 'Falha ao excluir.');
                 }
-                await loadCustos(); // Recarrega a lista
+                await loadCustos();
             } catch (err) {
                 alert(`Erro ao excluir: ${err.message}`);
             }
