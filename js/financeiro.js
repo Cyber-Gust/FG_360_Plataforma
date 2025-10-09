@@ -111,15 +111,12 @@ function ensureFinanceModal() {
         <h2 id="financeiro-modal-title">Novo Lançamento (Pedido)</h2>
         <button class="close-button" data-close-financeiro-modal>&times;</button>
       </header>
-
       <form id="financeiro-mov-form" class="modal-form">
         <input type="hidden" id="mov-id">
-
         <input type="hidden" id="mov-pacote-id">
         <input type="hidden" id="mov-cliente-id">
         <input type="hidden" id="mov-motorista-id">
         <input type="hidden" id="mov-veiculo-id">
-
         <div class="form-group">
           <label>Vínculo com Pedido (opcional)</label>
           <div style="display:flex; align-items:center; gap:.75rem; flex-wrap:wrap;">
@@ -130,26 +127,20 @@ function ensureFinanceModal() {
             <label style="display:flex; gap:.5rem; align-items:center; white-space:nowrap;">
               <input type="checkbox" id="mov-sem-pacote"> Não vincular agora
             </label>
-            <button type="button" id="unlink-pacote-btn" class="btn btn-tertiary" style="display:none;">
-              Desvincular
-            </button>
+            <button type="button" id="unlink-pacote-btn" class="btn btn-tertiary" style="display:none;">Desvincular</button>
           </div>
           <small id="pacote-info-display"></small>
         </div>
-
         <div class="form-group"><label>Valor Pedido (Receita)</label><input id="mov-valor-pedido" type="number" step="0.01"></div>
         <div class="form-group"><label>Custo Motorista</label><input id="mov-custo-motorista" type="number" step="0.01"></div>
         <div class="form-group"><label>Custo Veículo</label><input id="mov-custo-veiculo" type="number" step="0.01"></div>
-
         <div class="form-group"><label>Imposto</label><input id="mov-imposto" type="number" step="0.01"></div>
         <div class="form-group"><label>Custo Operação</label><input id="mov-custo-operacao" type="number" step="0.01"></div>
         <div class="form-group"><label>Custo Descarga</label><input id="mov-custo-descarga" type="number" step="0.01"></div>
         <div class="form-group"><label>Custo Seguro</label><input id="mov-custo-seguro" type="number" step="0.01"></div>
-
         <div class="form-group"><label>Data Lançamento</label><input id="mov-data-lancamento" type="date" required></div>
         <div class="form-group"><label>CT-e</label><input id="mov-cte" type="text" placeholder="Número ou código do CTe (opcional)"></div>
         <div class="form-group"><label>Observações</label><textarea id="mov-observacoes"></textarea></div>
-
         <footer class="modal-footer">
           <button type="button" class="btn btn-secondary" data-close-financeiro-modal>Cancelar</button>
           <button type="submit" class="btn btn-primary" id="submit-mov-btn">Salvar</button>
@@ -157,7 +148,41 @@ function ensureFinanceModal() {
       </form>
     </div>
   </div>
-  
+
+  <div class="modal-overlay" id="financeiro-avulsa-overlay" style="display:none;">
+    <div class="modal-content" id="financeiro-avulsa-content" style="max-height: 70vh; overflow-y: auto;">
+      <header class="modal-header">
+        <h2>Nova Movimentação Avulsa</h2>
+        <button class="close-button" data-close-financeiro-avulsa>&times;</button>
+      </header>
+      <form id="financeiro-avulsa-form" class="modal-form">
+        <input type="hidden" id="avulsa-id">
+        <div class="form-group">
+          <label>Tipo</label>
+          <div style="display:flex; gap:1rem;">
+            <label><input type="radio" name="avulsa-tipo" value="receita" checked> Receita</label>
+            <label><input type="radio" name="avulsa-tipo" value="custo"> Custo</label>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Descrição</label>
+          <input id="avulsa-descricao" placeholder="Ex.: Ajuste de caixa, combustível extra, multa, etc.">
+        </div>
+        <div class="form-group">
+          <label>Valor</label>
+          <input id="avulsa-valor" type="number" step="0.01" required>
+        </div>
+        <div class="form-group">
+          <label>Data Lançamento</label>
+          <input id="avulsa-data" type="date" required>
+        </div>
+        <footer class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-close-financeiro-avulsa>Cancelar</button>
+          <button type="submit" class="btn btn-primary" id="submit-avulsa-btn">Salvar</button>
+        </footer>
+      </form>
+    </div>
+  </div>
   `;
   document.body.insertAdjacentHTML("beforeend", modalHtml);
 }
@@ -172,7 +197,6 @@ async function renderFinanceiroPage() {
   pageContent.innerHTML = `
   <div id="financeiro-content">
     <div class="dashboard-section">
-      
       <div class="dashboard-header">
         <h3>Relatório de Período</h3>
         <div class="dashboard-filters">
@@ -182,7 +206,7 @@ async function renderFinanceiroPage() {
         </div>
       </div>
       <div class="stats-grid" id="finance-stats-grid"></div>
-      </div>
+    </div>
 
     <div class="flex" style="display:flex; gap:.5rem; flex-wrap:wrap; margin-bottom: .75rem;">
       <button class="btn btn-primary" id="open-mov-pacote">Fazer Lançamento Manual</button>
@@ -191,8 +215,9 @@ async function renderFinanceiroPage() {
 
     <div class="data-table-container">
       <h3 class="recent-packages-title">Lançamentos Recentes</h3>
-      <div class="table-wrapper">
-        <table class="data-table">
+      
+      <div class="table-wrapper" style="overflow-x: auto;">
+      <table class="data-table">
           <thead>
           <tr>
             <th>Data</th>
@@ -219,7 +244,7 @@ async function renderFinanceiroPage() {
   ensureFinanceModal();
 
   // inicialização
-  initializeFinanceReports(); // Agora esta função vai encontrar os inputs de data
+  initializeFinanceReports();
   loadFinancialTransactions();
   setupModalListeners();
 }
@@ -303,7 +328,7 @@ async function updateFinanceReports() {
 // ===============================================
 async function loadFinancialTransactions() {
   const tbody = document.getElementById("financial-transactions-body");
-  tbody.innerHTML = '<tr><td colspan="9">Carregando dados...</td></tr>'; // <-- COLSPAN ATUALIZADO
+  tbody.innerHTML = '<tr><td colspan="9">Carregando dados...</td></tr>';
 
   try {
     const response = await fetchAuthenticated("/api/financeiro");
@@ -312,14 +337,14 @@ async function loadFinancialTransactions() {
     const transactions = await response.json();
 
     if (!Array.isArray(transactions) || transactions.length === 0) {
-      // <-- COLSPAN ATUALIZADO
       tbody.innerHTML = '<tr><td colspan="9" class="no-data-message">Nenhum lançamento encontrado.</td></tr>';
       return;
     }
 
     tbody.innerHTML = transactions.map((t) => {
       const isAv = !!t.is_avulsa;
-      const tipo = isAv ? (t.avulsa_tipo === 'receita' ? 'Avulsa • Receita' : 'Avulsa • Custo') : 'Pedido';
+      // Corrigido o 'Pedido' para 'Pacote' para manter a consistência com o original
+      const tipo = isAv ? (t.avulsa_tipo === 'receita' ? 'Avulsa • Receita' : 'Avulsa • Custo') : 'Pacote';
 
       // Valores (pacote)
       const receitaPac = Number(t.valor_pedido || 0);
@@ -339,24 +364,32 @@ async function loadFinancialTransactions() {
 
       const codPacote = isAv ? "—" : (t.pacotes?.codigo_rastreio || "N/A");
       const cliente = isAv ? (t.avulsa_descricao ? `Avulsa: ${t.avulsa_descricao}` : "Avulsa") : (t.clientes?.nome_completo || "N/A");
-      const cte = t.cte || "—"; // <--- ADICIONADO AQUI
+      const cte = t.cte || "—";
 
       return `
         <tr data-id="${t.id}">
           <td>${dataFmt}</td>
-          <td>${cte}</td> <td>${tipo}</td>
+          <td>${cte}</td>
+          <td>${tipo}</td>
           <td>${codPacote}</td>
           <td>${cliente}</td>
           <td style="color: var(--color-success-dark);">${formatCurrency(receita, "-")}</td>
           <td style="color: var(--color-danger-dark);">${formatCurrency(custos, "-")}</td>
           <td style="font-weight:600;color:${lucroColor};">${formatCurrency(lucro)}</td>
+          
           <td class="actions">
-            </td>
-        </tr>
+            <button class="btn-icon btn-edit-mov" title="Editar">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
+            </button>
+            <button class="btn-icon btn-danger btn-delete-mov" title="Excluir">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+            </button>
+          </td>
+          </tr>
       `;
-    }).join("");  
+    }).join("");
 
-    // 🔗 Binda DEPOIS de pintar o DOM (e evita duplicar)
+    // O código que adiciona os eventos aos botões já está aqui e voltará a funcionar
     document.querySelectorAll(".btn-edit-mov").forEach((btn) => {
       if (btn.dataset.bound) return;
       btn.dataset.bound = "1";
@@ -386,7 +419,6 @@ async function loadFinancialTransactions() {
       });
     });
   } catch (error) {
-    // <-- COLSPAN ATUALIZADO
     document.getElementById("financial-transactions-body").innerHTML =
       `<tr><td colspan="9" class="error-message">Erro ao carregar dados: ${error.message}</td></tr>`;
   }
