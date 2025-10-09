@@ -168,9 +168,20 @@ function ensureFinanceModal() {
 async function renderFinanceiroPage() {
   const pageContent = document.getElementById("page-content");
 
+  // HTML da página do Financeiro
   pageContent.innerHTML = `
   <div id="financeiro-content">
     <div class="dashboard-section">
+      
+      <div class="dashboard-header">
+        <h3>Relatório de Período</h3>
+        <div class="dashboard-filters">
+          <input type="date" id="finance-start-date" required>
+          <span>até</span>
+          <input type="date" id="finance-end-date" required>
+        </div>
+      </div>
+      <div class="stats-grid" id="finance-stats-grid"></div>
       </div>
 
     <div class="flex" style="display:flex; gap:.5rem; flex-wrap:wrap; margin-bottom: .75rem;">
@@ -185,7 +196,8 @@ async function renderFinanceiroPage() {
           <thead>
           <tr>
             <th>Data</th>
-            <th>CTe</th> <th>Tipo</th>
+            <th>CTe</th>
+            <th>Tipo</th>
             <th>Cód. Pedido</th>
             <th>Cliente</th>
             <th>Receita (R$)</th>
@@ -196,16 +208,18 @@ async function renderFinanceiroPage() {
           </thead>
           <tbody id="financial-transactions-body">
             <tr><td colspan="9">Carregando lançamentos...</td></tr>
-            </tbody>
+          </tbody>
         </table>
       </div>
     </div>
   </div>
 `;
 
+  // garante que o modal exista no DOM
   ensureFinanceModal();
 
-  initializeFinanceReports();
+  // inicialização
+  initializeFinanceReports(); // Agora esta função vai encontrar os inputs de data
   loadFinancialTransactions();
   setupModalListeners();
 }
