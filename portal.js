@@ -130,6 +130,8 @@ function loadPageContent(page) {
         renderMotoristasPage();
     } else if (page === 'financeiro') {
         renderFinanceiroPage();
+    } else if (page === 'custos') {
+        renderCustosPage();    
     } else if (page === 'formularios') {
         renderFormulariosPage();
     } else {
