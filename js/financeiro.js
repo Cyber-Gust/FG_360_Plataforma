@@ -10,7 +10,7 @@ const formatCurrency = (value, fallback = "R$ 0,00") => {
 };
 
 function clearPacoteLinkUI() {
-  ["mov-pacote-id","mov-cliente-id","mov-motorista-id","mov-veiculo-id"].forEach(id => {
+  ["mov-pacote-id", "mov-cliente-id", "mov-motorista-id", "mov-veiculo-id"].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.value = "";
   });
@@ -24,15 +24,15 @@ function clearPacoteLinkUI() {
 
 function setSemPacoteUI(enabled) {
   const rast = document.getElementById("mov-pacote-rastreio");
-  const btn  = document.getElementById("search-pacote-btn");
+  const btn = document.getElementById("search-pacote-btn");
   if (rast) { rast.disabled = enabled; if (enabled) rast.value = ""; }
-  if (btn)  { btn.disabled  = enabled; }
+  if (btn) { btn.disabled = enabled; }
   if (enabled) clearPacoteLinkUI();
 }
 
 function openFinanceiroModal(mov = null) {
   const modal = document.getElementById("financeiro-modal-overlay");
-  const form  = document.getElementById("financeiro-mov-form");
+  const form = document.getElementById("financeiro-mov-form");
   const title = document.getElementById("financeiro-modal-title");
   if (!modal || !form) return;
 
@@ -44,21 +44,22 @@ function openFinanceiroModal(mov = null) {
   // preencher campos padrão
   if (mov) {
     if (title) title.textContent = "Editar Lançamento (Pedido";
-    (document.getElementById("mov-pacote-id") || {}).value    = mov.pacote_id || "";
-    (document.getElementById("mov-cliente-id") || {}).value   = mov.cliente_id || "";
+    (document.getElementById("mov-pacote-id") || {}).value = mov.pacote_id || "";
+    (document.getElementById("mov-cliente-id") || {}).value = mov.cliente_id || "";
     (document.getElementById("mov-motorista-id") || {}).value = mov.motorista_id || "";
-    (document.getElementById("mov-veiculo-id") || {}).value   = mov.veiculo_id || "";
+    (document.getElementById("mov-veiculo-id") || {}).value = mov.veiculo_id || "";
 
-    (document.getElementById("mov-valor-pedido") || {}).value     = mov.valor_pedido ?? "";
-    (document.getElementById("mov-custo-motorista") || {}).value  = mov.custo_motorista ?? "";
-    (document.getElementById("mov-custo-veiculo") || {}).value    = mov.custo_veiculo ?? "";
-    (document.getElementById("mov-imposto") || {}).value          = mov.imposto ?? "";
-    (document.getElementById("mov-custo-operacao") || {}).value   = mov.custo_operacao ?? "";
-    (document.getElementById("mov-custo-descarga") || {}).value   = mov.custo_descarga ?? "";
-    (document.getElementById("mov-custo-seguro") || {}).value     = mov.custo_seguro ?? "";
+    (document.getElementById("mov-valor-pedido") || {}).value = mov.valor_pedido ?? "";
+    (document.getElementById("mov-custo-motorista") || {}).value = mov.custo_motorista ?? "";
+    (document.getElementById("mov-custo-veiculo") || {}).value = mov.custo_veiculo ?? "";
+    (document.getElementById("mov-imposto") || {}).value = mov.imposto ?? "";
+    (document.getElementById("mov-custo-operacao") || {}).value = mov.custo_operacao ?? "";
+    (document.getElementById("mov-custo-descarga") || {}).value = mov.custo_descarga ?? "";
+    (document.getElementById("mov-custo-seguro") || {}).value = mov.custo_seguro ?? "";
 
-    (document.getElementById("mov-data-lancamento") || {}).value  = mov.data_lancamento || "";
-    (document.getElementById("mov-observacoes") || {}).value      = mov.observacoes || "";
+    (document.getElementById("mov-data-lancamento") || {}).value = mov.data_lancamento || "";
+    (document.getElementById("mov-cte") || {}).value = mov.cte || ""; // <--- ADICIONADO AQUI
+    (document.getElementById("mov-observacoes") || {}).value = mov.observacoes || "";
   } else {
     if (title) title.textContent = "Novo Lançamento (Pedido)";
     const today = new Date().toISOString().split("T")[0];
@@ -67,15 +68,15 @@ function openFinanceiroModal(mov = null) {
 
   // ---------- BLOCO “sem pacote” ----------
   const semPacoteChk = document.getElementById("mov-sem-pacote");
-  const unlinkBtn    = document.getElementById("unlink-pacote-btn");
-  const info         = document.getElementById("pacote-info-display");
+  const unlinkBtn = document.getElementById("unlink-pacote-btn");
+  const info = document.getElementById("pacote-info-display");
 
   const hasPacote = !!(mov && mov.pacote_id);
 
   if (info) {
     if (hasPacote) {
       const clienteNome = mov?.clientes?.nome_completo || "Cliente Não Vinculado";
-      const rastreio    = mov?.pacotes?.codigo_rastreio || "N/A";
+      const rastreio = mov?.pacotes?.codigo_rastreio || "N/A";
       info.innerHTML = `Pedido <strong>${rastreio}</strong> • Cliente: <strong>${clienteNome}</strong>`;
       info.style.color = "";
     } else {
@@ -86,20 +87,17 @@ function openFinanceiroModal(mov = null) {
 
   if (semPacoteChk) semPacoteChk.checked = !hasPacote;
 
-  // aplica estado (usa seus helpers)
   if (typeof setSemPacoteUI === "function") {
     setSemPacoteUI(!hasPacote);
   } else {
-    // fallback se os helpers não estiverem disponíveis
     const rast = document.getElementById("mov-pacote-rastreio");
-    const btn  = document.getElementById("search-pacote-btn");
+    const btn = document.getElementById("search-pacote-btn");
     if (rast) rast.disabled = !hasPacote;
-    if (btn)  btn.disabled  = !hasPacote;
+    if (btn) btn.disabled = !hasPacote;
   }
 
   if (unlinkBtn) unlinkBtn.style.display = hasPacote ? "inline-flex" : "none";
 
-  // abre modal
   modal.style.display = "flex";
 }
 // injeta modal se não existir no DOM (idempotente)
@@ -107,7 +105,6 @@ function ensureFinanceModal() {
   if (document.getElementById("financeiro-modal-overlay")) return;
 
   const modalHtml = `
-  <!-- MODAL: Movimentação por Pedido -->
   <div class="modal-overlay" id="financeiro-modal-overlay" style="display:none;">
     <div class="modal-content" id="financeiro-modal-content" style="max-height: 80vh; overflow-y: auto;">
       <header class="modal-header">
@@ -125,22 +122,18 @@ function ensureFinanceModal() {
 
         <div class="form-group">
           <label>Vínculo com Pedido (opcional)</label>
-
           <div style="display:flex; align-items:center; gap:.75rem; flex-wrap:wrap;">
             <div style="display:flex; gap:.5rem; align-items:center;">
               <input id="mov-pacote-rastreio" placeholder="EX: BR123..." />
               <button type="button" id="search-pacote-btn" class="btn btn-secondary">Buscar</button>
             </div>
-
             <label style="display:flex; gap:.5rem; align-items:center; white-space:nowrap;">
               <input type="checkbox" id="mov-sem-pacote"> Não vincular agora
             </label>
-
             <button type="button" id="unlink-pacote-btn" class="btn btn-tertiary" style="display:none;">
               Desvincular
             </button>
           </div>
-
           <small id="pacote-info-display"></small>
         </div>
 
@@ -154,6 +147,7 @@ function ensureFinanceModal() {
         <div class="form-group"><label>Custo Seguro</label><input id="mov-custo-seguro" type="number" step="0.01"></div>
 
         <div class="form-group"><label>Data Lançamento</label><input id="mov-data-lancamento" type="date" required></div>
+        <div class="form-group"><label>CT-e</label><input id="mov-cte" type="text" placeholder="Número ou código do CTe (opcional)"></div>
         <div class="form-group"><label>Observações</label><textarea id="mov-observacoes"></textarea></div>
 
         <footer class="modal-footer">
@@ -163,48 +157,7 @@ function ensureFinanceModal() {
       </form>
     </div>
   </div>
-
-  <!-- MODAL: Movimentação Avulsa -->
-  <div class="modal-overlay" id="financeiro-avulsa-overlay" style="display:none;">
-    <div class="modal-content" id="financeiro-avulsa-content" style="max-height: 70vh; overflow-y: auto;">
-      <header class="modal-header">
-        <h2>Nova Movimentação Avulsa</h2>
-        <button class="close-button" data-close-financeiro-avulsa>&times;</button>
-      </header>
-
-      <form id="financeiro-avulsa-form" class="modal-form">
-        <input type="hidden" id="avulsa-id">
-
-        <div class="form-group">
-          <label>Tipo</label>
-          <div style="display:flex; gap:1rem;">
-            <label><input type="radio" name="avulsa-tipo" value="receita" checked> Receita</label>
-            <label><input type="radio" name="avulsa-tipo" value="custo"> Custo</label>
-          </div>
-        </div>
-
-        <div class="form-group">
-          <label>Descrição</label>
-          <input id="avulsa-descricao" placeholder="Ex.: Ajuste de caixa, combustível extra, multa, etc.">
-        </div>
-
-        <div class="form-group">
-          <label>Valor</label>
-          <input id="avulsa-valor" type="number" step="0.01" required>
-        </div>
-
-        <div class="form-group">
-          <label>Data Lançamento</label>
-          <input id="avulsa-data" type="date" required>
-        </div>
-
-        <footer class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-close-financeiro-avulsa>Cancelar</button>
-          <button type="submit" class="btn btn-primary" id="submit-avulsa-btn">Salvar</button>
-        </footer>
-      </form>
-    </div>
-  </div>
+  
   `;
   document.body.insertAdjacentHTML("beforeend", modalHtml);
 }
@@ -215,21 +168,10 @@ function ensureFinanceModal() {
 async function renderFinanceiroPage() {
   const pageContent = document.getElementById("page-content");
 
-  // HTML da página do Financeiro
   pageContent.innerHTML = `
   <div id="financeiro-content">
     <div class="dashboard-section">
-      <div class="dashboard-header">
-        <h3>Relatório de Período</h3>
-        <div class="dashboard-filters">
-          <input type="date" id="finance-start-date" required>
-          <span>até</span>
-          <input type="date" id="finance-end-date" required>
-        </div>
       </div>
-
-      <div class="stats-grid" id="finance-stats-grid"></div>
-    </div>
 
     <div class="flex" style="display:flex; gap:.5rem; flex-wrap:wrap; margin-bottom: .75rem;">
       <button class="btn btn-primary" id="open-mov-pacote">Fazer Lançamento Manual</button>
@@ -243,7 +185,7 @@ async function renderFinanceiroPage() {
           <thead>
           <tr>
             <th>Data</th>
-            <th>Tipo</th>
+            <th>CTe</th> <th>Tipo</th>
             <th>Cód. Pedido</th>
             <th>Cliente</th>
             <th>Receita (R$)</th>
@@ -253,21 +195,19 @@ async function renderFinanceiroPage() {
           </tr>
           </thead>
           <tbody id="financial-transactions-body">
-            <tr><td colspan="8">Carregando lançamentos...</td></tr>
-          </tbody>
+            <tr><td colspan="9">Carregando lançamentos...</td></tr>
+            </tbody>
         </table>
       </div>
     </div>
   </div>
 `;
 
-  // garante que o modal exista no DOM
   ensureFinanceModal();
 
-  // inicialização
   initializeFinanceReports();
   loadFinancialTransactions();
-  setupModalListeners(); // agora busca os elementos internamente
+  setupModalListeners();
 }
 
 // ===============================================
@@ -313,7 +253,7 @@ async function updateFinanceReports() {
       data.lucro_liquido != null
         ? data.lucro_liquido
         : receita_total -
-            (Number(data.custo_motorista_total || 0) + Number(data.custo_veiculo_total || 0))
+        (Number(data.custo_motorista_total || 0) + Number(data.custo_veiculo_total || 0))
     );
     const total_entradas = Number(data.total_entradas || 0);
 
@@ -349,7 +289,7 @@ async function updateFinanceReports() {
 // ===============================================
 async function loadFinancialTransactions() {
   const tbody = document.getElementById("financial-transactions-body");
-  tbody.innerHTML = '<tr><td colspan="8">Carregando dados...</td></tr>';
+  tbody.innerHTML = '<tr><td colspan="9">Carregando dados...</td></tr>'; // <-- COLSPAN ATUALIZADO
 
   try {
     const response = await fetchAuthenticated("/api/financeiro");
@@ -358,53 +298,49 @@ async function loadFinancialTransactions() {
     const transactions = await response.json();
 
     if (!Array.isArray(transactions) || transactions.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="8" class="no-data-message">Nenhum lançamento encontrado.</td></tr>';
+      // <-- COLSPAN ATUALIZADO
+      tbody.innerHTML = '<tr><td colspan="9" class="no-data-message">Nenhum lançamento encontrado.</td></tr>';
       return;
     }
 
     tbody.innerHTML = transactions.map((t) => {
-    const isAv = !!t.is_avulsa;
-    const tipo = isAv ? (t.avulsa_tipo === 'receita' ? 'Avulsa • Receita' : 'Avulsa • Custo') : 'Pacote';
+      const isAv = !!t.is_avulsa;
+      const tipo = isAv ? (t.avulsa_tipo === 'receita' ? 'Avulsa • Receita' : 'Avulsa • Custo') : 'Pacote';
 
-    // Valores (pacote)
-    const receitaPac = Number(t.valor_pedido || 0);
-    const custosPac  = Number(t.custo_motorista || 0) + Number(t.custo_veiculo || 0) +
-                      Number(t.imposto || 0) + Number(t.custo_operacao || 0) +
-                      Number(t.custo_descarga || 0) + Number(t.custo_seguro || 0);
+      // Valores (pacote)
+      const receitaPac = Number(t.valor_pedido || 0);
+      const custosPac = Number(t.custo_motorista || 0) + Number(t.custo_veiculo || 0) +
+        Number(t.imposto || 0) + Number(t.custo_operacao || 0) +
+        Number(t.custo_descarga || 0) + Number(t.custo_seguro || 0);
 
-    // Valores (avulsa)
-    const valAv = Number(t.avulsa_valor || 0);
-    const receita = isAv && t.avulsa_tipo === 'receita' ? valAv : receitaPac;
-    const custos  = isAv && t.avulsa_tipo === 'custo'   ? valAv : custosPac;
+      // Valores (avulsa)
+      const valAv = Number(t.avulsa_valor || 0);
+      const receita = isAv && t.avulsa_tipo === 'receita' ? valAv : receitaPac;
+      const custos = isAv && t.avulsa_tipo === 'custo' ? valAv : custosPac;
 
-    const lucro = receita - custos;
-    const lucroColor = lucro >= 0 ? "var(--color-success-dark)" : "var(--color-danger-dark)";
-    const dt = t.data_lancamento ? new Date(t.data_lancamento) : null;
-    const dataFmt = dt && !isNaN(dt) ? dt.toLocaleDateString("pt-BR") : "-";
+      const lucro = receita - custos;
+      const lucroColor = lucro >= 0 ? "var(--color-success-dark)" : "var(--color-danger-dark)";
+      const dt = t.data_lancamento ? new Date(t.data_lancamento) : null;
+      const dataFmt = dt && !isNaN(dt) ? dt.toLocaleDateString("pt-BR") : "-";
 
-    const codPacote = isAv ? "—" : (t.pacotes?.codigo_rastreio || "N/A");
-    const cliente   = isAv ? (t.avulsa_descricao ? `Avulsa: ${t.avulsa_descricao}` : "Avulsa") : (t.clientes?.nome_completo || "N/A");
+      const codPacote = isAv ? "—" : (t.pacotes?.codigo_rastreio || "N/A");
+      const cliente = isAv ? (t.avulsa_descricao ? `Avulsa: ${t.avulsa_descricao}` : "Avulsa") : (t.clientes?.nome_completo || "N/A");
+      const cte = t.cte || "—"; // <--- ADICIONADO AQUI
 
-    return `
-      <tr data-id="${t.id}">
-        <td>${dataFmt}</td>
-        <td>${tipo}</td>
-        <td>${codPacote}</td>
-        <td>${cliente}</td>
-        <td style="color: var(--color-success-dark);">${formatCurrency(receita, "-")}</td>
-        <td style="color: var(--color-danger-dark);">${formatCurrency(custos, "-")}</td>
-        <td style="font-weight:600;color:${lucroColor};">${formatCurrency(lucro)}</td>
-        <td class="actions">
-          <button class="btn-icon btn-edit-mov" title="Editar">
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
-          </button>
-          <button class="btn-icon btn-danger btn-delete-mov" title="Excluir">
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
-          </button>
-        </td>
-      </tr>
-    `;
-  }).join("");
+      return `
+        <tr data-id="${t.id}">
+          <td>${dataFmt}</td>
+          <td>${cte}</td> <td>${tipo}</td>
+          <td>${codPacote}</td>
+          <td>${cliente}</td>
+          <td style="color: var(--color-success-dark);">${formatCurrency(receita, "-")}</td>
+          <td style="color: var(--color-danger-dark);">${formatCurrency(custos, "-")}</td>
+          <td style="font-weight:600;color:${lucroColor};">${formatCurrency(lucro)}</td>
+          <td class="actions">
+            </td>
+        </tr>
+      `;
+    }).join("");  
 
     // 🔗 Binda DEPOIS de pintar o DOM (e evita duplicar)
     document.querySelectorAll(".btn-edit-mov").forEach((btn) => {
@@ -436,8 +372,9 @@ async function loadFinancialTransactions() {
       });
     });
   } catch (error) {
+    // <-- COLSPAN ATUALIZADO
     document.getElementById("financial-transactions-body").innerHTML =
-      `<tr><td colspan="8" class="error-message">Erro ao carregar dados: ${error.message}</td></tr>`;
+      `<tr><td colspan="9" class="error-message">Erro ao carregar dados: ${error.message}</td></tr>`;
   }
 }
 
@@ -447,14 +384,14 @@ async function loadFinancialTransactions() {
 function setupModalListeners() {
   // Garantir modais no DOM
   const modalPac = document.getElementById("financeiro-modal-overlay");
-  const formPac  = document.getElementById("financeiro-mov-form");
-  const modalAv  = document.getElementById("financeiro-avulsa-overlay");
-  const formAv   = document.getElementById("financeiro-avulsa-form");
+  const formPac = document.getElementById("financeiro-mov-form");
+  const modalAv = document.getElementById("financeiro-avulsa-overlay");
+  const formAv = document.getElementById("financeiro-avulsa-form");
   const pacoteInfoDisplay = document.getElementById("pacote-info-display");
 
   // Abrir modais
   const btnPac = document.getElementById("open-mov-pacote");
-  const btnAv  = document.getElementById("open-mov-avulsa");
+  const btnAv = document.getElementById("open-mov-avulsa");
 
   if (btnPac && !btnPac.dataset.bound) {
     btnPac.dataset.bound = "1";
@@ -528,7 +465,7 @@ function setupModalListeners() {
 
 function openAvulsaModal(mov = null) {
   const modal = document.getElementById("financeiro-avulsa-overlay");
-  const form  = document.getElementById("financeiro-avulsa-form");
+  const form = document.getElementById("financeiro-avulsa-form");
   if (!modal || !form) return;
 
   form.reset();
@@ -581,7 +518,7 @@ async function handleAvulsaSubmit(e) {
     const method = id ? 'PUT' : 'POST';
     const resp = await fetchAuthenticated('/api/financeiro', { method, body: JSON.stringify(payload) });
     if (!resp.ok) {
-      const j = await resp.json().catch(()=>({}));
+      const j = await resp.json().catch(() => ({}));
       throw new Error(j.error || 'Falha ao salvar avulsa.');
     }
 
@@ -595,7 +532,7 @@ async function handleAvulsaSubmit(e) {
     if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = "Salvar"; }
     handleAvulsaSubmit._busy = false;
   }
-}  
+}
 
 async function searchAndLinkPacote({ pacoteInfoDisplay }) {
   const rastreioInput = document.getElementById("mov-pacote-rastreio");
@@ -654,7 +591,7 @@ async function searchAndLinkPacote({ pacoteInfoDisplay }) {
 
 async function handleFinanceFormSubmit(e, { financeMovModal }) {
   e.preventDefault();
-  if (handleFinanceFormSubmit._busy) return; // 🚫 evita duplo clique
+  if (handleFinanceFormSubmit._busy) return;
   handleFinanceFormSubmit._busy = true;
 
   const submitBtn = document.getElementById("submit-mov-btn");
@@ -664,11 +601,9 @@ async function handleFinanceFormSubmit(e, { financeMovModal }) {
   }
 
   try {
-
     const id = (document.getElementById("mov-id") || {}).value || null;
 
     const payload = {
-
       pacote_id: (document.getElementById("mov-pacote-id") || {}).value || null,
       cliente_id: (document.getElementById("mov-cliente-id") || {}).value || null,
       motorista_id: (document.getElementById("mov-motorista-id") || {}).value || null,
@@ -685,25 +620,27 @@ async function handleFinanceFormSubmit(e, { financeMovModal }) {
 
       data_lancamento: (document.getElementById("mov-data-lancamento") || {}).value,
       observacoes: (document.getElementById("mov-observacoes") || {}).value,
+      cte: (document.getElementById("mov-cte") || {}).value || null, // <--- ADICIONADO AQUI
     };
 
     if (!payload.data_lancamento) throw new Error("A data do lançamento é obrigatória.");
     if (
-      !payload.valor_pedido &&
-      !payload.custo_motorista &&
-      !payload.custo_veiculo &&
-      !payload.imposto &&
-      !payload.custo_operacao &&
-      !payload.custo_descarga &&
-      !payload.custo_seguro
+      !payload.valor_pedido && !payload.custo_motorista && !payload.custo_veiculo &&
+      !payload.imposto && !payload.custo_operacao && !payload.custo_descarga && !payload.custo_seguro
     ) {
       throw new Error("Insira pelo menos um valor (Receita ou algum Custo).");
     }
 
-    const isEdit = Boolean(payload.id);
+    // Usei a correção do bug que apontei na análise anterior
+    const isEdit = Boolean(id);
     const method = isEdit ? "PUT" : "POST";
+    const bodyPayload = isEdit ? { ...payload, id } : payload;
 
-    const response = await fetchAuthenticated("/api/financeiro", { method, body: JSON.stringify(payload) });
+    const response = await fetchAuthenticated("/api/financeiro", {
+      method,
+      body: JSON.stringify(bodyPayload)
+    });
+
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
       throw new Error(errorData.error || "Falha ao salvar lançamento.");
@@ -718,7 +655,7 @@ async function handleFinanceFormSubmit(e, { financeMovModal }) {
   } finally {
     if (submitBtn) {
       submitBtn.disabled = false;
-      submitBtn.textContent = "Salvar Lançamento";
+      submitBtn.textContent = "Salvar"; // Corrigido para "Salvar" no final
     }
     handleFinanceFormSubmit._busy = false;
   }
