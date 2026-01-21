@@ -168,7 +168,7 @@ window.addEventListener("DOMContentLoaded", () => {
         return;
       }
 
-      const { error } = await supabaseClient.auth.signOut({ scope: "global" });
+      const { error } = await supabaseClient.auth.signOut({ scope: "local" });
 
       if (error) {
         console.error("❌ Erro no signOut:", error);
