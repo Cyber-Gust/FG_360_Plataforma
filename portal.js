@@ -1,29 +1,105 @@
-// portal.js
-// ===================================================================
-// ARQUIVO PRINCIPAL DE LÓGICA DO PORTAL
-// Responsável pela autenticação e navegação entre as páginas.
-// ===================================================================
+console.log("✅ portal.js carregou e tá vivo");
 
-// Inicialização do cliente Supabase (usando as chaves do config.js)
-if (!supabaseUrl || !supabaseKey || supabaseUrl === 'https://plmyiaviwwcyovxslqlb.supabase.co') {
+// ======================================================
+// 🔒 CONFIG + SEGURANÇA
+// ======================================================
+
+if (!supabaseUrl || !supabaseKey) {
+  alert('Por favor, configure supabaseUrl e supabaseKey no arquivo config.js!');
+  throw new Error('Supabase não configurado.');
 }
-else { alert('Por favor, configure suas chaves do Supabase no arquivo config.js!'); }
 
-const supabase = self.supabase.createClient(supabaseUrl, supabaseKey);
+// ======================================================
+// ⏳ AUTO LOGOUT POR INATIVIDADE (7 DIAS)
+// ======================================================
 
-// --- SELEÇÃO DE ELEMENTOS DA DOM ---
-const authContainer = document.getElementById('auth-container');
-const portalContainer = document.getElementById('portal-container');
-const loginForm = document.getElementById('login-form');
-const loginError = document.getElementById('login-error');
-const userEmailSpan = document.getElementById('user-email');
-const logoutButton = document.getElementById('logout-button');
-const navLinks = document.querySelectorAll('.nav-link');
-const pageTitle = document.getElementById('page-title');
-const pageContent = document.getElementById('page-content');
+const INACTIVITY_LIMIT_MS = 7 * 24 * 60 * 60 * 1000; // 7 dias
+const LAST_ACTIVITY_KEY = "fg360_last_activity";
+
+function now() {
+  return Date.now();
+}
+
+function updateLastActivity() {
+  localStorage.setItem(LAST_ACTIVITY_KEY, String(now()));
+}
+
+function getLastActivity() {
+  const value = localStorage.getItem(LAST_ACTIVITY_KEY);
+  return value ? Number(value) : null;
+}
+
+async function forceLogout(reason = "Sessão expirada por inatividade.") {
+  console.warn("🚪 Logout automático:", reason);
+
+  try {
+    await supabase.auth.signOut();
+  } catch (err) {
+    console.error("Erro ao deslogar:", err);
+  }
+
+  alert(reason);
+  showLogin();
+}
+
+async function checkInactivityAndLogoutIfNeeded() {
+  const last = getLastActivity();
+
+  // Se nunca registrou atividade, cria agora
+  if (!last) {
+    updateLastActivity();
+    return;
+  }
+
+  const diff = now() - last;
+
+  if (diff >= INACTIVITY_LIMIT_MS) {
+    await forceLogout("Você ficou 1 semana sem atividade. Por segurança, você foi deslogado ✅");
+  }
+}
+
+function startInactivityMonitor() {
+  // Eventos que contam como "atividade"
+  const events = [
+    "mousemove",
+    "mousedown",
+    "keydown",
+    "touchstart",
+    "scroll",
+    "click"
+  ];
+
+  // Atualiza atividade (com leve controle pra não spammar localStorage)
+  let throttleTimer = null;
+
+  function throttledActivityUpdate() {
+    if (throttleTimer) return;
+    throttleTimer = setTimeout(() => {
+      updateLastActivity();
+      throttleTimer = null;
+    }, 1000);
+  }
+
+  events.forEach(evt => {
+    window.addEventListener(evt, throttledActivityUpdate, { passive: true });
+  });
+
+  // Quando a aba volta a ficar visível, atualiza também
+  document.addEventListener("visibilitychange", () => {
+    if (!document.hidden) {
+      updateLastActivity();
+    }
+  });
+
+  // Check periódico (a cada 1 minuto)
+  setInterval(checkInactivityAndLogoutIfNeeded, 60 * 1000);
+}
 
 
-// LÓGICA DE AUTENTICAÇÃO
+// ======================================================
+// ✅ FETCH AUTENTICADO (mantive igual, só mais seguro)
+// ======================================================
+
 async function fetchAuthenticated(url, options = {}) {
   const { data: { session } } = await supabase.auth.getSession();
   if (!session) throw new Error('Sem sessão ativa. Faça login.');
@@ -42,143 +118,243 @@ async function fetchAuthenticated(url, options = {}) {
 }
 window.fetchAuthenticated = fetchAuthenticated;
 
-// 1. Tenta fazer login quando o formulário é enviado
-loginForm.addEventListener('submit', async (e) => {
+
+// ======================================================
+// 🧠 APP PRINCIPAL (roda só depois do DOM pronto)
+// ======================================================
+
+window.addEventListener("DOMContentLoaded", () => {
+  // --- SELEÇÃO DE ELEMENTOS DA DOM ---
+  const authContainer = document.getElementById('auth-container');
+  const portalContainer = document.getElementById('portal-container');
+  const loginForm = document.getElementById('login-form');
+  const loginError = document.getElementById('login-error');
+  const userEmailSpan = document.getElementById('user-email');
+  const logoutButton = document.getElementById('logout-button');
+  const navLinks = document.querySelectorAll('.nav-link');
+  const pageTitle = document.getElementById('page-title');
+  const pageContent = document.getElementById('page-content');
+  
+  window.pageContent = pageContent;
+  window.pageTitle = pageTitle;
+    
+  // Se esses caras não existirem, nem adianta continuar
+  if (!authContainer || !portalContainer || !loginForm || !loginError || !userEmailSpan || !logoutButton) {
+    console.error("❌ Elementos essenciais do portal não encontrados no DOM.");
+    return;
+  }
+
+  // ======================================================
+  // ✅ CONTROLE DE TELAS
+  // ======================================================
+
+  function showPortal(user) {
+    userEmailSpan.textContent = user.email;
+
+    authContainer.classList.add('hidden');
+    portalContainer.classList.remove('hidden');
+
+    // Registra atividade assim que loga
+    updateLastActivity();
+
+    // Carrega dashboard inicial
+    loadPageContent('dashboard');
+  }
+
+  function showLogin() {
+    authContainer.classList.remove('hidden');
+    portalContainer.classList.add('hidden');
+  }
+
+  // deixa no window caso você use em outros arquivos
+  window.showPortal = showPortal;
+  window.showLogin = showLogin;
+
+  // ======================================================
+  // ✅ LOGIN BLINDADO
+  // ======================================================
+
+  loginForm.addEventListener('submit', async (e) => {
     e.preventDefault();
-    const email = document.getElementById('login-email').value;
-    const password = document.getElementById('login-password').value;
+    updateLastActivity();
+
+    const email = document.getElementById('login-email')?.value?.trim();
+    const password = document.getElementById('login-password')?.value;
+
+    if (!email || !password) {
+      loginError.textContent = "Preenche email e senha direito aí 😅";
+      loginError.classList.remove('hidden');
+      return;
+    }
 
     const { data, error } = await supabase.auth.signInWithPassword({
-        email: email,
-        password: password,
+      email,
+      password,
     });
 
     if (error) {
-        loginError.textContent = 'Erro: ' + error.message;
-        loginError.classList.remove('hidden');
-    } else {
-        loginError.classList.add('hidden');
-        showPortal(data.user);
+      loginError.textContent = 'Erro: ' + error.message;
+      loginError.classList.remove('hidden');
+      return;
     }
-});
 
-// 2. Função para fazer logout
-logoutButton.addEventListener('click', async () => {
+    loginError.classList.add('hidden');
+
+    // ✅ Não depende do data.user (às vezes vem null em alguns fluxos)
+    // mas aqui geralmente vem ok. Mesmo assim vamos ficar seguros:
+    const user = data?.user;
+    if (user) showPortal(user);
+  });
+
+  // ======================================================
+  // ✅ LOGOUT MANUAL
+  // ======================================================
+
+  logoutButton.addEventListener('click', async () => {
+    updateLastActivity();
+
     const { error } = await supabase.auth.signOut();
     if (error) {
-        alert('Erro ao sair: ' + error.message);
+      alert('Erro ao sair: ' + error.message);
     } else {
-        showLogin();
+      showLogin();
     }
-});
+  });
 
-// 3. Verifica se o usuário já está logado ao carregar a página
-async function checkUserSession() {
-    const { data } = await supabase.auth.getSession();
-    if (data.session) {
-        showPortal(data.session.user);
-    } else {
-        showLogin();
-    }
-}
+  // ======================================================
+  // ✅ ROTEADOR / NAVEGAÇÃO
+  // ======================================================
 
+  navLinks.forEach(link => {
+    link.addEventListener('click', (e) => {
+      e.preventDefault();
+      updateLastActivity();
 
-// --- CONTROLE DE VISIBILIDADE DAS TELAS ---
+      navLinks.forEach(l => l.classList.remove('active'));
+      link.classList.add('active');
 
-function showPortal(user) {
-    userEmailSpan.textContent = user.email;
-    authContainer.classList.add('hidden');
-    portalContainer.classList.remove('hidden');
-    loadPageContent('dashboard'); // Carrega a página inicial do dashboard ao logar
-}
+      const page = link.dataset.page;
+      if (!page) return;
 
-function showLogin() {
-    authContainer.classList.remove('hidden');
-    portalContainer.classList.add('hidden');
-}
+      loadPageContent(page);
+    });
+  });
 
+  function loadPageContent(page) {
+    updateLastActivity();
 
-// --- LÓGICA DE NAVEGAÇÃO (ROTEADOR) ---
-
-navLinks.forEach(link => {
-    if (link.id !== 'logout-button') {
-        link.addEventListener('click', (e) => {
-            e.preventDefault();
-            navLinks.forEach(l => l.classList.remove('active'));
-            link.classList.add('active');
-            const page = link.dataset.page;
-            loadPageContent(page);
-        });
-    }
-});
-
-// Função central que carrega o conteúdo da página selecionada
-function loadPageContent(page) {
-    // --- LÓGICA DE TÍTULO ATUALIZADA ---
-    // 1. Encontra o link do menu que foi clicado
+    // título
     const link = document.querySelector(`.nav-link[data-page="${page}"]`);
-    
-    // 2. Pega o texto de dentro do link para usar como título
     const title = link ? link.textContent : page.charAt(0).toUpperCase() + page.slice(1);
-    
-    // 3. Define o título no H1 da página
-    pageTitle.textContent = title;
-    // --- FIM DA LÓGICA DE TÍTULO ---
+    if (pageTitle) pageTitle.textContent = title;
 
-    // Chama a função de renderização correspondente de cada arquivo JS (sua estrutura if/else if)
-    if (page === 'dashboard') {
+    // conteúdo
+    try {
+      if (page === 'dashboard') {
         renderDashboardPage();
-    } else if (page === 'clientes') {
+      } else if (page === 'clientes') {
         renderClientesPage();
-    } else if (page === 'pedidos') {
+      } else if (page === 'pedidos') {
         renderPacotesPage();
-    } else if (page === 'frota') {
+      } else if (page === 'frota') {
         renderVeiculosPage();
-    } else if (page === 'motoristas') {
+      } else if (page === 'motoristas') {
         renderMotoristasPage();
-    } else if (page === 'financeiro') {
+      } else if (page === 'financeiro') {
         renderFinanceiroPage();
-    } else if (page === 'custos') {
-        renderCustosPage();    
-    } else if (page === 'formularios') {
+      } else if (page === 'custos') {
+        renderCustosPage();
+      } else if (page === 'formularios') {
         renderFormulariosPage();
-    } else {
+      } else {
         pageContent.innerHTML = `<h2>Página ${title}</h2><p>Conteúdo em construção.</p>`;
+      }
+    } catch (err) {
+      console.error("💥 Erro carregando página:", page, err);
+      pageContent.innerHTML = `
+        <h2>Opa 😬</h2>
+        <p>Deu erro ao carregar <strong>${title}</strong>.</p>
+        <pre style="white-space:pre-wrap; background:#111; color:#0f0; padding:12px; border-radius:8px;">${err}</pre>
+      `;
     }
-}
+  }
 
-function setupMobileMenu() {
+  // deixa acessível global caso algum outro script chame
+  window.loadPageContent = loadPageContent;
+
+  // ======================================================
+  // 📱 MENU MOBILE (mantive seu código, só com segurança)
+  // ======================================================
+
+  function setupMobileMenu() {
     const menuToggleButton = document.getElementById('mobile-menu-toggle');
     const sidebar = document.querySelector('.sidebar');
     const overlay = document.getElementById('mobile-overlay');
 
-    if (menuToggleButton && sidebar && overlay) {
-        // Abre o menu
-        menuToggleButton.addEventListener('click', (e) => {
-            e.stopPropagation(); // Impede que o clique feche o menu imediatamente
-            sidebar.classList.toggle('open');
-            overlay.classList.toggle('active');
-        });
+    if (!menuToggleButton || !sidebar || !overlay) return;
 
-        // Fecha o menu clicando no overlay
-        overlay.addEventListener('click', () => {
-            sidebar.classList.remove('open');
-            overlay.classList.remove('active');
-        });
+    menuToggleButton.addEventListener('click', (e) => {
+      e.stopPropagation();
+      updateLastActivity();
+      sidebar.classList.toggle('open');
+      overlay.classList.toggle('active');
+    });
 
-        // Fecha o menu clicando em um link da sidebar
-        sidebar.querySelectorAll('.nav-link').forEach(link => {
-            link.addEventListener('click', () => {
-                sidebar.classList.remove('open');
-                overlay.classList.remove('active');
-            });
-        });
+    overlay.addEventListener('click', () => {
+      updateLastActivity();
+      sidebar.classList.remove('open');
+      overlay.classList.remove('active');
+    });
+
+    sidebar.querySelectorAll('.nav-link').forEach(link => {
+      link.addEventListener('click', () => {
+        updateLastActivity();
+        sidebar.classList.remove('open');
+        overlay.classList.remove('active');
+      });
+    });
+  }
+
+  setupMobileMenu();
+
+  // ======================================================
+  // ✅ ESTADO DE SESSÃO (Supabase manda, a UI obedece)
+  // ======================================================
+
+  supabase.auth.onAuthStateChange(async (event, session) => {
+    console.log("🔐 Supabase auth event:", event);
+
+    if (session?.user) {
+      // Antes de mostrar portal, verifica se a sessão não ficou velha por inatividade
+      await checkInactivityAndLogoutIfNeeded();
+
+      // Se ainda existir sessão depois do check, entra
+      const { data: { session: currentSession } } = await supabase.auth.getSession();
+      if (currentSession?.user) {
+        showPortal(currentSession.user);
+      }
+    } else {
+      showLogin();
     }
-}
+  });
 
-// Chama a função para configurar o menu
-setupMobileMenu();
+  // ======================================================
+  // 🚀 INICIALIZAÇÃO
+  // ======================================================
 
-// --- INICIALIZAÇÃO ---
-// Inicia a verificação de sessão assim que o script é carregado
-checkUserSession();
+  // começa a monitorar atividade
+  startInactivityMonitor();
+
+  // se o cara ficou 1 semana fora e abriu a página, já expulsa
+  checkInactivityAndLogoutIfNeeded();
+
+  // checa sessão atual (inicial)
+  (async function checkUserSession() {
+    const { data } = await supabase.auth.getSession();
+    if (data.session?.user) {
+      showPortal(data.session.user);
+    } else {
+      showLogin();
+    }
+  })();
+});
