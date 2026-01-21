@@ -3,6 +3,12 @@ if (!supabaseUrl || !supabaseKey) {
   throw new Error("Supabase não configurado.");
 }
 
-// ✅ Não sobrescreve window.supabase (biblioteca)
 window.supabaseClient =
-  window.supabaseClient || window.supabase.createClient(supabaseUrl, supabaseKey);
+  window.supabaseClient ||
+  window.supabase.createClient(supabaseUrl, supabaseKey, {
+    auth: {
+      persistSession: true,
+      autoRefreshToken: true,
+      detectSessionInUrl: false,
+    },
+  });
