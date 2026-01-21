@@ -9,6 +9,11 @@ if (typeof supabaseUrl === "undefined" || typeof supabaseKey === "undefined") {
   throw new Error("Supabase não configurado.");
 }
 
+if (typeof supabaseClient === "undefined") {
+  alert("SupabaseClient não encontrado. Verifique o supabaseClient.js!");
+  throw new Error("supabaseClient não configurado.");
+}
+
 // ======================================================
 // 🛑 AUTO LOGOUT DESATIVADO (Sessão Infinita)
 // ======================================================
@@ -98,11 +103,9 @@ window.addEventListener("DOMContentLoaded", () => {
     authContainer.classList.add("hidden");
     portalContainer.classList.remove("hidden");
 
-    // Registra atividade assim que loga (no-op porque sessão infinita)
     updateLastActivity();
 
-    // ✅ IMPORTANTÍSSIMO:
-    // Só carrega dashboard 1 vez ao entrar, pra não duplicar listeners/render.
+    // ✅ Só carrega dashboard 1 vez por sessão
     if (!portalInitialized) {
       portalInitialized = true;
       loadPageContent("dashboard");
@@ -111,8 +114,12 @@ window.addEventListener("DOMContentLoaded", () => {
 
   function showLogin() {
     portalInitialized = false; // reseta para próximo login
+
     authContainer.classList.remove("hidden");
     portalContainer.classList.add("hidden");
+
+    // (opcional) pode limpar conteúdo ao voltar pro login
+    // if (pageContent) pageContent.innerHTML = "";
   }
 
   // deixa no window caso você use em outros arquivos
@@ -138,19 +145,32 @@ window.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
-    const { error } = await supabaseClient.auth.signInWithPassword({
-      email,
-      password,
-    });
+    // (opcional) bloquear botão enquanto tenta logar
+    const submitBtn = loginForm.querySelector('button[type="submit"]');
+    if (submitBtn) submitBtn.disabled = true;
 
-    if (error) {
-      loginError.textContent = "Erro: " + error.message;
+    try {
+      const { error } = await supabaseClient.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (error) {
+        console.error("❌ LOGIN ERROR FULL:", error);
+        loginError.textContent = "Erro: " + error.message;
+        loginError.classList.remove("hidden");
+        return;
+      }
+
+      // ✅ Não chama showPortal aqui!
+      // O Supabase vai disparar onAuthStateChange e aí sim entra.
+    } catch (err) {
+      console.error("💥 Erro inesperado no login:", err);
+      loginError.textContent = "Erro inesperado. Tente novamente.";
       loginError.classList.remove("hidden");
-      return;
+    } finally {
+      if (submitBtn) submitBtn.disabled = false;
     }
-
-    // ✅ Não chama showPortal aqui!
-    // O Supabase vai disparar onAuthStateChange e aí sim entra.
   });
 
   // ======================================================
@@ -159,7 +179,9 @@ window.addEventListener("DOMContentLoaded", () => {
 
   logoutButton.addEventListener("click", async () => {
     try {
-      const { data: { session } } = await supabaseClient.auth.getSession();
+      const {
+        data: { session },
+      } = await supabaseClient.auth.getSession();
 
       // Se não tem sessão, só volta pra tela de login e pronto
       if (!session) {
@@ -292,13 +314,12 @@ window.addEventListener("DOMContentLoaded", () => {
   // ======================================================
 
   supabaseClient.auth.onAuthStateChange(async (event, session) => {
-    console.log("🔐 Supabase auth event:", event);
+    console.log("🔐 Auth event:", event);
+    console.log("🧠 Session user:", session?.user?.email);
+    console.log("🎟️ Has token:", !!session?.access_token);
 
     if (session?.user) {
-      // Sessão infinita: isso não faz nada, mas mantemos
       await checkInactivityAndLogoutIfNeeded();
-
-      // Mostra portal
       showPortal(session.user);
     } else {
       showLogin();
@@ -309,19 +330,25 @@ window.addEventListener("DOMContentLoaded", () => {
   // 🚀 INICIALIZAÇÃO
   // ======================================================
 
-  // inicia o monitor (aqui tá desligado por sessão infinita)
   startInactivityMonitor();
-
-  // Sessão infinita: não expulsa ninguém
   checkInactivityAndLogoutIfNeeded();
 
-  // Check inicial de sessão (pra entrar direto sem precisar clicar login)
+  // ✅ Check inicial de sessão (IMPORTANTE: NÃO chama showPortal aqui)
   (async function checkUserSession() {
-    const { data } = await supabaseClient.auth.getSession();
+    try {
+      const { data, error } = await supabaseClient.auth.getSession();
 
-    if (data.session?.user) {
-      showPortal(data.session.user);
-    } else {
+      if (error) {
+        console.warn("⚠️ Erro ao pegar sessão inicial:", error);
+      }
+
+      // ✅ Se não tem sessão, vai pro login.
+      // Quem manda mostrar portal é o onAuthStateChange.
+      if (!data.session?.user) {
+        showLogin();
+      }
+    } catch (err) {
+      console.error("💥 Falha ao checar sessão inicial:", err);
       showLogin();
     }
   })();
