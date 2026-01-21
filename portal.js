@@ -10,53 +10,27 @@ if (!supabaseUrl || !supabaseKey) {
 }
 
 // ======================================================
-// ⏳ AUTO LOGOUT POR INATIVIDADE (7 DIAS)
+// 🛑 AUTO LOGOUT DESATIVADO (Sessão Infinita)
 // ======================================================
 
-const INACTIVITY_LIMIT_MS = 7 * 24 * 60 * 60 * 1000; // 7 dias
-const LAST_ACTIVITY_KEY = "fg360_last_activity";
-
-function now() {
-  return Date.now();
-}
+// Mantemos as funções vazias para não quebrar o resto do código
+// que tenta chamar updateLastActivity() ou startInactivityMonitor().
 
 function updateLastActivity() {
-  localStorage.setItem(LAST_ACTIVITY_KEY, String(now()));
+  // Não faz nada. O cliente é livre! 🕊️
 }
 
-function getLastActivity() {
-  const value = localStorage.getItem(LAST_ACTIVITY_KEY);
-  return value ? Number(value) : null;
+function startInactivityMonitor() {
+  console.log("♾️ Monitor de inatividade desligado: Sessão infinita ativada.");
 }
 
-async function forceLogout(reason = "Sessão expirada por inatividade.") {
-  console.warn("🚪 Logout automático:", reason);
-
-  try {
-    await supabase.auth.signOut();
-  } catch (err) {
-    console.error("Erro ao deslogar:", err);
-  }
-
-  alert(reason);
-  showLogin();
+function checkInactivityAndLogoutIfNeeded() {
+  // Nunca desloga ninguém.
 }
 
-async function checkInactivityAndLogoutIfNeeded() {
-  const last = getLastActivity();
+// Mantemos essas acessíveis caso algo externo chame
+window.updateLastActivity = updateLastActivity;
 
-  // Se nunca registrou atividade, cria agora
-  if (!last) {
-    updateLastActivity();
-    return;
-  }
-
-  const diff = now() - last;
-
-  if (diff >= INACTIVITY_LIMIT_MS) {
-    await forceLogout("Você ficou 1 semana sem atividade. Por segurança, você foi deslogado ✅");
-  }
-}
 
 function startInactivityMonitor() {
   // Eventos que contam como "atividade"
