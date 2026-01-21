@@ -4,94 +4,55 @@ console.log("✅ portal.js carregou e tá vivo");
 // 🔒 CONFIG + SEGURANÇA
 // ======================================================
 
-if (!supabaseUrl || !supabaseKey) {
-  alert('Por favor, configure supabaseUrl e supabaseKey no arquivo config.js!');
-  throw new Error('Supabase não configurado.');
+if (typeof supabaseUrl === "undefined" || typeof supabaseKey === "undefined") {
+  alert("Por favor, configure supabaseUrl e supabaseKey no arquivo config.js!");
+  throw new Error("Supabase não configurado.");
 }
 
 // ======================================================
 // 🛑 AUTO LOGOUT DESATIVADO (Sessão Infinita)
 // ======================================================
 
-// Mantemos as funções vazias para não quebrar o resto do código
-// que tenta chamar updateLastActivity() ou startInactivityMonitor().
-
 function updateLastActivity() {
-  // Não faz nada. O cliente é livre! 🕊️
+  // Sessão infinita: não faz nada.
 }
 
 function startInactivityMonitor() {
-  console.log("♾️ Monitor de inatividade desligado: Sessão infinita ativada.");
+  console.log("♾️ Sessão infinita ativada: monitor de inatividade DESLIGADO.");
 }
 
-function checkInactivityAndLogoutIfNeeded() {
-  // Nunca desloga ninguém.
+async function checkInactivityAndLogoutIfNeeded() {
+  // Sessão infinita: nunca desloga ninguém.
 }
 
-// Mantemos essas acessíveis caso algo externo chame
+// Mantém acessível global caso algum script chame
 window.updateLastActivity = updateLastActivity;
 
-
-function startInactivityMonitor() {
-  // Eventos que contam como "atividade"
-  const events = [
-    "mousemove",
-    "mousedown",
-    "keydown",
-    "touchstart",
-    "scroll",
-    "click"
-  ];
-
-  // Atualiza atividade (com leve controle pra não spammar localStorage)
-  let throttleTimer = null;
-
-  function throttledActivityUpdate() {
-    if (throttleTimer) return;
-    throttleTimer = setTimeout(() => {
-      updateLastActivity();
-      throttleTimer = null;
-    }, 1000);
-  }
-
-  events.forEach(evt => {
-    window.addEventListener(evt, throttledActivityUpdate, { passive: true });
-  });
-
-  // Quando a aba volta a ficar visível, atualiza também
-  document.addEventListener("visibilitychange", () => {
-    if (!document.hidden) {
-      updateLastActivity();
-    }
-  });
-
-  // Check periódico (a cada 1 minuto)
-  setInterval(checkInactivityAndLogoutIfNeeded, 60 * 1000);
-}
-
-
 // ======================================================
-// ✅ FETCH AUTENTICADO (mantive igual, só mais seguro)
+// ✅ FETCH AUTENTICADO (global e único)
 // ======================================================
 
 async function fetchAuthenticated(url, options = {}) {
-  const { data: { session } } = await supabase.auth.getSession();
-  if (!session) throw new Error('Sem sessão ativa. Faça login.');
+  const {
+    data: { session },
+  } = await supabaseClient.auth.getSession();
+
+  if (!session) throw new Error("Sem sessão ativa. Faça login.");
 
   const headers = {
-    'Authorization': `Bearer ${session.access_token}`,
+    Authorization: `Bearer ${session.access_token}`,
     ...(options.headers || {}),
   };
 
   // Só define Content-Type se NÃO for FormData
   if (!(options.body instanceof FormData)) {
-    headers['Content-Type'] = 'application/json';
+    headers["Content-Type"] = "application/json";
   }
 
   return fetch(url, { ...options, headers });
 }
-window.fetchAuthenticated = fetchAuthenticated;
 
+window.fetchAuthenticated = fetchAuthenticated;
 
 // ======================================================
 // 🧠 APP PRINCIPAL (roda só depois do DOM pronto)
@@ -99,21 +60,28 @@ window.fetchAuthenticated = fetchAuthenticated;
 
 window.addEventListener("DOMContentLoaded", () => {
   // --- SELEÇÃO DE ELEMENTOS DA DOM ---
-  const authContainer = document.getElementById('auth-container');
-  const portalContainer = document.getElementById('portal-container');
-  const loginForm = document.getElementById('login-form');
-  const loginError = document.getElementById('login-error');
-  const userEmailSpan = document.getElementById('user-email');
-  const logoutButton = document.getElementById('logout-button');
-  const navLinks = document.querySelectorAll('.nav-link');
-  const pageTitle = document.getElementById('page-title');
-  const pageContent = document.getElementById('page-content');
-  
+  const authContainer = document.getElementById("auth-container");
+  const portalContainer = document.getElementById("portal-container");
+  const loginForm = document.getElementById("login-form");
+  const loginError = document.getElementById("login-error");
+  const userEmailSpan = document.getElementById("user-email");
+  const logoutButton = document.getElementById("logout-button");
+  const navLinks = document.querySelectorAll(".nav-link");
+  const pageTitle = document.getElementById("page-title");
+  const pageContent = document.getElementById("page-content");
+
   window.pageContent = pageContent;
   window.pageTitle = pageTitle;
-    
+
   // Se esses caras não existirem, nem adianta continuar
-  if (!authContainer || !portalContainer || !loginForm || !loginError || !userEmailSpan || !logoutButton) {
+  if (
+    !authContainer ||
+    !portalContainer ||
+    !loginForm ||
+    !loginError ||
+    !userEmailSpan ||
+    !logoutButton
+  ) {
     console.error("❌ Elementos essenciais do portal não encontrados no DOM.");
     return;
   }
@@ -122,22 +90,29 @@ window.addEventListener("DOMContentLoaded", () => {
   // ✅ CONTROLE DE TELAS
   // ======================================================
 
+  let portalInitialized = false;
+
   function showPortal(user) {
-    userEmailSpan.textContent = user.email;
+    userEmailSpan.textContent = user?.email || "(sem email)";
 
-    authContainer.classList.add('hidden');
-    portalContainer.classList.remove('hidden');
+    authContainer.classList.add("hidden");
+    portalContainer.classList.remove("hidden");
 
-    // Registra atividade assim que loga
+    // Registra atividade assim que loga (no-op porque sessão infinita)
     updateLastActivity();
 
-    // Carrega dashboard inicial
-    loadPageContent('dashboard');
+    // ✅ IMPORTANTÍSSIMO:
+    // Só carrega dashboard 1 vez ao entrar, pra não duplicar listeners/render.
+    if (!portalInitialized) {
+      portalInitialized = true;
+      loadPageContent("dashboard");
+    }
   }
 
   function showLogin() {
-    authContainer.classList.remove('hidden');
-    portalContainer.classList.add('hidden');
+    portalInitialized = false; // reseta para próximo login
+    authContainer.classList.remove("hidden");
+    portalContainer.classList.add("hidden");
   }
 
   // deixa no window caso você use em outros arquivos
@@ -145,52 +120,68 @@ window.addEventListener("DOMContentLoaded", () => {
   window.showLogin = showLogin;
 
   // ======================================================
-  // ✅ LOGIN BLINDADO
+  // ✅ LOGIN (quem manda é o onAuthStateChange)
   // ======================================================
 
-  loginForm.addEventListener('submit', async (e) => {
+  loginForm.addEventListener("submit", async (e) => {
     e.preventDefault();
+
+    loginError.classList.add("hidden");
     updateLastActivity();
 
-    const email = document.getElementById('login-email')?.value?.trim();
-    const password = document.getElementById('login-password')?.value;
+    const email = document.getElementById("login-email")?.value?.trim();
+    const password = document.getElementById("login-password")?.value;
 
     if (!email || !password) {
-      loginError.textContent = "Preenche email e senha direito aí 😅";
-      loginError.classList.remove('hidden');
+      loginError.textContent = "Favor preencher E-Mail e Senha corretamente!";
+      loginError.classList.remove("hidden");
       return;
     }
 
-    const { data, error } = await supabase.auth.signInWithPassword({
+    const { error } = await supabaseClient.auth.signInWithPassword({
       email,
       password,
     });
 
     if (error) {
-      loginError.textContent = 'Erro: ' + error.message;
-      loginError.classList.remove('hidden');
+      loginError.textContent = "Erro: " + error.message;
+      loginError.classList.remove("hidden");
       return;
     }
 
-    loginError.classList.add('hidden');
-
-    // ✅ Não depende do data.user (às vezes vem null em alguns fluxos)
-    // mas aqui geralmente vem ok. Mesmo assim vamos ficar seguros:
-    const user = data?.user;
-    if (user) showPortal(user);
+    // ✅ Não chama showPortal aqui!
+    // O Supabase vai disparar onAuthStateChange e aí sim entra.
   });
 
   // ======================================================
   // ✅ LOGOUT MANUAL
   // ======================================================
 
-  logoutButton.addEventListener('click', async () => {
-    updateLastActivity();
+  logoutButton.addEventListener("click", async () => {
+    try {
+      const { data: { session } } = await supabaseClient.auth.getSession();
 
-    const { error } = await supabase.auth.signOut();
-    if (error) {
-      alert('Erro ao sair: ' + error.message);
-    } else {
+      // Se não tem sessão, só volta pra tela de login e pronto
+      if (!session) {
+        console.warn("⚠️ Logout clicado sem sessão ativa. Indo para login.");
+        showLogin();
+        return;
+      }
+
+      const { error } = await supabaseClient.auth.signOut({ scope: "global" });
+
+      if (error) {
+        console.error("❌ Erro no signOut:", error);
+        alert("Erro ao sair: " + error.message);
+
+        // Mesmo com erro, manda o usuário pra tela de login
+        showLogin();
+        return;
+      }
+
+      showLogin();
+    } catch (err) {
+      console.error("💥 Falha geral no logout:", err);
       showLogin();
     }
   });
@@ -199,13 +190,13 @@ window.addEventListener("DOMContentLoaded", () => {
   // ✅ ROTEADOR / NAVEGAÇÃO
   // ======================================================
 
-  navLinks.forEach(link => {
-    link.addEventListener('click', (e) => {
+  navLinks.forEach((link) => {
+    link.addEventListener("click", (e) => {
       e.preventDefault();
       updateLastActivity();
 
-      navLinks.forEach(l => l.classList.remove('active'));
-      link.classList.add('active');
+      navLinks.forEach((l) => l.classList.remove("active"));
+      link.classList.add("active");
 
       const page = link.dataset.page;
       if (!page) return;
@@ -219,26 +210,29 @@ window.addEventListener("DOMContentLoaded", () => {
 
     // título
     const link = document.querySelector(`.nav-link[data-page="${page}"]`);
-    const title = link ? link.textContent : page.charAt(0).toUpperCase() + page.slice(1);
+    const title = link
+      ? link.textContent
+      : page.charAt(0).toUpperCase() + page.slice(1);
+
     if (pageTitle) pageTitle.textContent = title;
 
     // conteúdo
     try {
-      if (page === 'dashboard') {
+      if (page === "dashboard") {
         renderDashboardPage();
-      } else if (page === 'clientes') {
+      } else if (page === "clientes") {
         renderClientesPage();
-      } else if (page === 'pedidos') {
+      } else if (page === "pedidos") {
         renderPacotesPage();
-      } else if (page === 'frota') {
+      } else if (page === "frota") {
         renderVeiculosPage();
-      } else if (page === 'motoristas') {
+      } else if (page === "motoristas") {
         renderMotoristasPage();
-      } else if (page === 'financeiro') {
+      } else if (page === "financeiro") {
         renderFinanceiroPage();
-      } else if (page === 'custos') {
+      } else if (page === "custos") {
         renderCustosPage();
-      } else if (page === 'formularios') {
+      } else if (page === "formularios") {
         renderFormulariosPage();
       } else {
         pageContent.innerHTML = `<h2>Página ${title}</h2><p>Conteúdo em construção.</p>`;
@@ -248,7 +242,9 @@ window.addEventListener("DOMContentLoaded", () => {
       pageContent.innerHTML = `
         <h2>Opa 😬</h2>
         <p>Deu erro ao carregar <strong>${title}</strong>.</p>
-        <pre style="white-space:pre-wrap; background:#111; color:#0f0; padding:12px; border-radius:8px;">${err}</pre>
+        <pre style="white-space:pre-wrap; background:#111; color:#0f0; padding:12px; border-radius:8px;">${String(
+          err?.stack || err
+        )}</pre>
       `;
     }
   }
@@ -257,34 +253,34 @@ window.addEventListener("DOMContentLoaded", () => {
   window.loadPageContent = loadPageContent;
 
   // ======================================================
-  // 📱 MENU MOBILE (mantive seu código, só com segurança)
+  // 📱 MENU MOBILE (seguro)
   // ======================================================
 
   function setupMobileMenu() {
-    const menuToggleButton = document.getElementById('mobile-menu-toggle');
-    const sidebar = document.querySelector('.sidebar');
-    const overlay = document.getElementById('mobile-overlay');
+    const menuToggleButton = document.getElementById("mobile-menu-toggle");
+    const sidebar = document.querySelector(".sidebar");
+    const overlay = document.getElementById("mobile-overlay");
 
     if (!menuToggleButton || !sidebar || !overlay) return;
 
-    menuToggleButton.addEventListener('click', (e) => {
+    menuToggleButton.addEventListener("click", (e) => {
       e.stopPropagation();
       updateLastActivity();
-      sidebar.classList.toggle('open');
-      overlay.classList.toggle('active');
+      sidebar.classList.toggle("open");
+      overlay.classList.toggle("active");
     });
 
-    overlay.addEventListener('click', () => {
+    overlay.addEventListener("click", () => {
       updateLastActivity();
-      sidebar.classList.remove('open');
-      overlay.classList.remove('active');
+      sidebar.classList.remove("open");
+      overlay.classList.remove("active");
     });
 
-    sidebar.querySelectorAll('.nav-link').forEach(link => {
-      link.addEventListener('click', () => {
+    sidebar.querySelectorAll(".nav-link").forEach((link) => {
+      link.addEventListener("click", () => {
         updateLastActivity();
-        sidebar.classList.remove('open');
-        overlay.classList.remove('active');
+        sidebar.classList.remove("open");
+        overlay.classList.remove("active");
       });
     });
   }
@@ -295,18 +291,15 @@ window.addEventListener("DOMContentLoaded", () => {
   // ✅ ESTADO DE SESSÃO (Supabase manda, a UI obedece)
   // ======================================================
 
-  supabase.auth.onAuthStateChange(async (event, session) => {
+  supabaseClient.auth.onAuthStateChange(async (event, session) => {
     console.log("🔐 Supabase auth event:", event);
 
     if (session?.user) {
-      // Antes de mostrar portal, verifica se a sessão não ficou velha por inatividade
+      // Sessão infinita: isso não faz nada, mas mantemos
       await checkInactivityAndLogoutIfNeeded();
 
-      // Se ainda existir sessão depois do check, entra
-      const { data: { session: currentSession } } = await supabase.auth.getSession();
-      if (currentSession?.user) {
-        showPortal(currentSession.user);
-      }
+      // Mostra portal
+      showPortal(session.user);
     } else {
       showLogin();
     }
@@ -316,15 +309,16 @@ window.addEventListener("DOMContentLoaded", () => {
   // 🚀 INICIALIZAÇÃO
   // ======================================================
 
-  // começa a monitorar atividade
+  // inicia o monitor (aqui tá desligado por sessão infinita)
   startInactivityMonitor();
 
-  // se o cara ficou 1 semana fora e abriu a página, já expulsa
+  // Sessão infinita: não expulsa ninguém
   checkInactivityAndLogoutIfNeeded();
 
-  // checa sessão atual (inicial)
+  // Check inicial de sessão (pra entrar direto sem precisar clicar login)
   (async function checkUserSession() {
-    const { data } = await supabase.auth.getSession();
+    const { data } = await supabaseClient.auth.getSession();
+
     if (data.session?.user) {
       showPortal(data.session.user);
     } else {
