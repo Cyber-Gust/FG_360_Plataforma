@@ -1,11 +1,21 @@
 // pages/api/custos.js
 
 import { createClient } from '@supabase/supabase-js';
+import formidable from 'formidable';
+import fs from 'fs';
+import path from 'path';
+
+export const config = {
+  api: { bodyParser: false },
+};
 
 const supabaseUrl = process.env.VITE_SUPABASE_URL;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_KEY;
 const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
+// --------------------------------------------------
+// AUTH
+// --------------------------------------------------
 async function requireUser(request) {
   const token = request.headers.authorization?.split('Bearer ')?.[1];
   if (!token) {
@@ -13,6 +23,7 @@ async function requireUser(request) {
     err.status = 401;
     throw err;
   }
+
   const { data: { user }, error } = await supabase.auth.getUser(token);
   if (error || !user) {
     const err = new Error('Não autorizado: Token inválido ou expirado.');
@@ -22,6 +33,9 @@ async function requireUser(request) {
   return user;
 }
 
+// --------------------------------------------------
+// HANDLER
+// --------------------------------------------------
 export default async function handler(request, response) {
   try {
     await requireUser(request);
@@ -29,99 +43,158 @@ export default async function handler(request, response) {
     return response.status(err.status || 401).json({ error: err.message });
   }
 
-  // --- GET (Listar todos os custos ou um específico) ---
+  // --------------------------------------------------
+  // GET
+  // --------------------------------------------------
   if (request.method === 'GET') {
     try {
       const { id } = request.query;
-      
-      // Ajuste: Removido 'cpf' da consulta
-      let query = supabase.from('custos')
-        .select(`
-          *,
-          motoristas!motorista_id ( nome_completo )
-        `)
-        .order('data_custo', { ascending: false });
 
       if (id) {
-        // Ajuste: Removido 'cpf' da consulta para um único item
-        const { data, error } = await supabase.from('custos')
+        const { data, error } = await supabase
+          .from('custos')
           .select(`*, motoristas!motorista_id ( nome_completo )`)
           .eq('id', id)
           .single();
+
         if (error) throw error;
         return response.status(200).json(data);
-      } else {
-        const { data, error } = await query;
-        if (error) throw error;
-        return response.status(200).json(data || []);
       }
+
+      const { data, error } = await supabase
+        .from('custos')
+        .select(`*, motoristas!motorista_id ( nome_completo )`)
+        .order('data_custo', { ascending: false });
+
+      if (error) throw error;
+      return response.status(200).json(data || []);
     } catch (error) {
-      console.error("Erro na API GET /custos:", error);
-      return response.status(500).json({ error: 'Erro ao buscar custos: ' + error.message });
+      console.error('Erro GET /custos:', error);
+      return response.status(500).json({ error: error.message });
     }
   }
 
-  // --- POST (Criar um novo custo) ---
-  if (request.method === 'POST') {
+  // --------------------------------------------------
+  // POST / PUT  (com upload)
+  // --------------------------------------------------
+  if (request.method === 'POST' || request.method === 'PUT') {
     try {
-      const { error } = await supabase.from('custos').insert([request.body]);
+      const form = formidable();
+      const [fields, files] = await form.parse(request);
+
+      const isEdit = request.method === 'PUT';
+      const id = fields.id?.[0];
+
+      if (isEdit && !id) {
+        return response.status(400).json({ error: 'ID do custo é obrigatório.' });
+      }
+
+      // ---------- UPLOAD ----------
+      const uploadFile = async (fieldName) => {
+        const f = files[fieldName]?.[0];
+        if (!f) return null;
+
+        const motoristaId = fields.motorista_id?.[0];
+        if (!motoristaId) {
+          throw new Error('motorista_id é obrigatório para upload');
+        }
+
+        const buffer = fs.readFileSync(f.filepath);
+        const fileName = `${motoristaId}/${Date.now()}-${f.originalFilename}`;
+
+        const { error } = await supabase.storage
+          .from('comprovantes_custos')
+          .upload(fileName, buffer, {
+            contentType: f.mimetype,
+            upsert: true,
+          });
+
+        if (error) throw error;
+
+        const { data } = supabase.storage
+          .from('comprovantes_custos')
+          .getPublicUrl(fileName);
+
+        return data.publicUrl;
+      };
+
+      const anexo1Url = await uploadFile('anexo1');
+      const anexo2Url = await uploadFile('anexo2');
+
+      // ---------- PAYLOAD ----------
+      const payload = {
+        motorista_id: fields.motorista_id?.[0],
+        data_custo: fields.data_custo?.[0],
+        chave_pix: fields.chave_pix?.[0] || null,
+        valor_adiantamento: fields.valor_adiantamento?.[0]
+          ? Number(fields.valor_adiantamento[0])
+          : null,
+        valor_saldo: fields.valor_saldo?.[0]
+          ? Number(fields.valor_saldo[0])
+          : null,
+      };
+
+      if (anexo1Url) payload.anexo1_url = anexo1Url;
+      if (anexo2Url) payload.anexo2_url = anexo2Url;
+
+      if (isEdit) {
+        const { error } = await supabase
+          .from('custos')
+          .update(payload)
+          .eq('id', id);
+
+        if (error) throw error;
+        return response.status(200).json({ message: 'Custo atualizado com sucesso!' });
+      }
+
+      const { error } = await supabase.from('custos').insert([payload]);
       if (error) throw error;
+
       return response.status(201).json({ message: 'Custo criado com sucesso!' });
+
     } catch (error) {
-      return response.status(500).json({ error: 'Erro ao criar custo: ' + error.message });
+      console.error('Erro POST/PUT /custos:', error);
+      return response.status(500).json({ error: error.message });
     }
   }
 
-  // --- PUT (Atualizar um custo existente) ---
-  if (request.method === 'PUT') {
-    try {
-      const { id, ...custoData } = request.body;
-      if (!id) return response.status(400).json({ error: 'ID do custo é obrigatório.' });
-
-      const { error } = await supabase.from('custos').update(custoData).match({ id });
-      if (error) throw error;
-      return response.status(200).json({ message: 'Custo atualizado com sucesso!' });
-    } catch (error) {
-      return response.status(500).json({ error: 'Erro ao atualizar custo: ' + error.message });
-    }
-  }
-
-  // --- DELETE (Excluir um custo e seus anexos) ---
+  // --------------------------------------------------
+  // DELETE
+  // --------------------------------------------------
   if (request.method === 'DELETE') {
     try {
       const { id } = request.query;
-      if (!id) return response.status(400).json({ error: 'ID do custo é obrigatório.' });
+      if (!id) {
+        return response.status(400).json({ error: 'ID do custo é obrigatório.' });
+      }
 
-      // 1. Buscar o custo para pegar as URLs dos anexos
-      const { data: custo, error: fetchError } = await supabase.from('custos').select('anexo1_url, anexo2_url').eq('id', id).single();
-      if (fetchError) throw fetchError;
+      const { data: custo, error } = await supabase
+        .from('custos')
+        .select('anexo1_url, anexo2_url')
+        .eq('id', id)
+        .single();
 
-      // 2. Montar a lista de arquivos para deletar do Storage
+      if (error) throw error;
+
       const filesToDelete = [];
-      if (custo.anexo1_url) {
-        const filePath = new URL(custo.anexo1_url).pathname.split('/comprovantes_custos/')[1];
-        filesToDelete.push(filePath);
+      if (custo?.anexo1_url) {
+        filesToDelete.push(new URL(custo.anexo1_url).pathname.split('/comprovantes_custos/')[1]);
       }
-      if (custo.anexo2_url) {
-        const filePath = new URL(custo.anexo2_url).pathname.split('/comprovantes_custos/')[1];
-        filesToDelete.push(filePath);
+      if (custo?.anexo2_url) {
+        filesToDelete.push(new URL(custo.anexo2_url).pathname.split('/comprovantes_custos/')[1]);
       }
 
-      // 3. Deletar os arquivos do Storage, se existirem
-      if (filesToDelete.length > 0) {
-        const { error: storageError } = await supabase.storage.from('comprovantes_custos').remove(filesToDelete);
-        if (storageError) {
-          console.error("Aviso: Falha ao deletar anexo do storage, mas o registro do DB será excluído:", storageError.message);
-        }
+      if (filesToDelete.length) {
+        await supabase.storage.from('comprovantes_custos').remove(filesToDelete);
       }
 
-      // 4. Deletar o registro do custo no banco de dados
-      const { error: dbError } = await supabase.from('custos').delete().match({ id });
+      const { error: dbError } = await supabase.from('custos').delete().eq('id', id);
       if (dbError) throw dbError;
 
       return response.status(200).json({ message: 'Custo e anexos excluídos com sucesso!' });
     } catch (error) {
-      return response.status(500).json({ error: 'Erro ao excluir custo: ' + error.message });
+      console.error('Erro DELETE /custos:', error);
+      return response.status(500).json({ error: error.message });
     }
   }
 

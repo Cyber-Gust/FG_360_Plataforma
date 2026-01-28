@@ -58,12 +58,10 @@ function loadFormData(formType) {
 // --- Função para buscar e renderizar as COTAÇÕES ---
 async function fetchAndRenderCotacoes(container) {
     try {
-        const { data, error } = await supabase
-            .from('cotacoes')
-            .select('*')
-            .order('created_at', { ascending: false });
+        const response = await fetchAuthenticated('/api/formularios?type=cotacoes');
+        if (!response.ok) throw new Error('Falha ao buscar cotações');
 
-        if (error) throw error;
+        const data = await response.json();
 
         if (data.length === 0) {
             container.innerHTML = '<p>Nenhuma cotação recebida.</p>';
@@ -104,12 +102,10 @@ async function fetchAndRenderCotacoes(container) {
 // --- Função para buscar e renderizar as CANDIDATURAS (Trabalhe Conosco) ---
 async function fetchAndRenderCandidaturas(container) {
     try {
-        const { data, error } = await supabase
-            .from('candidaturas')
-            .select('*')
-            .order('created_at', { ascending: false });
+        const response = await fetchAuthenticated('/api/formularios?type=candidaturas');
+        if (!response.ok) throw new Error('Falha ao buscar candidaturas');
 
-        if (error) throw error;
+        const data = await response.json();
 
         if (data.length === 0) {
             container.innerHTML = '<p>Nenhuma candidatura recebida.</p>';
@@ -156,12 +152,10 @@ async function fetchAndRenderCandidaturas(container) {
 // --- Função para buscar e renderizar os AGREGADOS ---
 async function fetchAndRenderAgregados(container) {
     try {
-        const { data, error } = await supabase
-            .from('agregados')
-            .select('*')
-            .order('created_at', { ascending: false });
+        const response = await fetchAuthenticated('/api/formularios?type=agregados');
+        if (!response.ok) throw new Error('Falha ao buscar agregados');
 
-        if (error) throw error;
+        const data = await response.json();
 
         if (data.length === 0) {
             container.innerHTML = '<p>Nenhum cadastro de agregado recebido.</p>';

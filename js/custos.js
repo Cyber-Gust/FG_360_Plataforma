@@ -2,7 +2,6 @@
 
 // Variável global para armazenar a lista de motoristas e evitar múltiplas buscas
 let listaDeMotoristas = [];
-
 // ===============================================
 // RENDERIZAÇÃO PRINCIPAL DA PÁGINA
 // ===============================================
@@ -184,14 +183,12 @@ function openCustosModal(custo = null) {
         const option = document.createElement('option');
         option.value = m.id;
         option.textContent = m.nome_completo;
-        // option.dataset.cpf foi removido daqui
         select.appendChild(option);
     });
 
     if (custo) {
         title.textContent = 'Editar Acerto';
         select.value = custo.motorista_id;
-        // Linha que preenchia o CPF foi removida
         document.getElementById('custo-data').value = custo.data_custo;
         document.getElementById('custo-chave-pix').value = custo.chave_pix || '';
         document.getElementById('custo-adiantamento').value = custo.valor_adiantamento ?? '';
@@ -223,8 +220,6 @@ function setupCustosListeners() {
             document.getElementById('custos-modal-overlay').style.display = 'none';
         });
     });
-
-    // vvvvvv LISTENER PARA AUTO-PREENCHER CPF FOI REMOVIDO DAQUI vvvvvv
 
     document.getElementById('custos-form')?.addEventListener('submit', handleCustoFormSubmit);
 
@@ -268,55 +263,24 @@ async function handleCustoFormSubmit(e) {
     const isEdit = !!id;
 
     try {
-        // Função auxiliar para upload
-        const uploadFile = async (fileInputId) => {
-            const fileInput = document.getElementById(fileInputId);
-            const file = fileInput.files[0];
-            if (!file) return null;
+        const formData = new FormData();
 
-            const motoristaId = document.getElementById('custo-motorista-id').value;
-            // Cria um nome de arquivo único para evitar conflitos
-            const fileName = `${motoristaId}/${Date.now()}-${file.name}`;
-            
-            const { data, error } = await supabase.storage
-                .from('comprovantes_custos')
-                .upload(fileName, file, {
-                    cacheControl: '3600',
-                    upsert: true // Permite substituir se o arquivo já existir
-                });
-            
-            if (error) throw new Error(`Falha no upload do anexo: ${error.message}`);
-            
-            const { data: { publicUrl } } = supabase.storage
-                .from('comprovantes_custos')
-                .getPublicUrl(data.path);
+        formData.append('motorista_id', document.getElementById('custo-motorista-id').value);
+        formData.append('data_custo', document.getElementById('custo-data').value);
+        formData.append('chave_pix', document.getElementById('custo-chave-pix').value || '');
+        formData.append('valor_adiantamento', document.getElementById('custo-adiantamento').value || '');
+        formData.append('valor_saldo', document.getElementById('custo-saldo').value || '');
 
-            return publicUrl;
-        };
+        const f1 = document.getElementById('custo-anexo1').files[0];
+        const f2 = document.getElementById('custo-anexo2').files[0];
+        if (f1) formData.append('anexo1', f1);
+        if (f2) formData.append('anexo2', f2);
 
-        // Faz o upload dos arquivos e obtém as URLs
-        const anexo1Url = await uploadFile('custo-anexo1');
-        const anexo2Url = await uploadFile('custo-anexo2');
-
-        // Monta o payload para enviar para a API
-        const payload = {
-            motorista_id: document.getElementById('custo-motorista-id').value,
-            data_custo: document.getElementById('custo-data').value,
-            chave_pix: document.getElementById('custo-chave-pix').value || null,
-            valor_adiantamento: parseFloat(document.getElementById('custo-adiantamento').value) || null,
-            valor_saldo: parseFloat(document.getElementById('custo-saldo').value) || null,
-        };
-
-        // Adiciona URLs somente se um novo arquivo foi enviado
-        if (anexo1Url) payload.anexo1_url = anexo1Url;
-        if (anexo2Url) payload.anexo2_url = anexo2Url;
-        
-        const method = isEdit ? 'PUT' : 'POST';
-        if (isEdit) payload.id = id;
+        if (isEdit) formData.append('id', id);
 
         const response = await fetchAuthenticated('/api/custos', {
-            method,
-            body: JSON.stringify(payload),
+            method: isEdit ? 'PUT' : 'POST',
+            body: formData
         });
 
         if (!response.ok) {
@@ -335,3 +299,5 @@ async function handleCustoFormSubmit(e) {
         submitBtn.textContent = 'Salvar';
     }
 }
+
+window.renderCustosPage = renderCustosPage;
